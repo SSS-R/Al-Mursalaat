@@ -3,45 +3,49 @@
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
+import json
 
 # --- Configuration ---
-# Define the scope of the APIs we need to access.
 SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file"
 ]
-
-# Path to your credentials JSON file.
 CREDS_FILE = 'credentials.json'
 
-# Name of the Google Sheet you created.
-SHEET_NAME = 'Al-Mursalaat Data'
+# --- NEW: Use Sheet ID instead of Name ---
+# TODO: Replace this with the actual ID of your Google Sheet
+SHEET_ID = '1nAAAjHMOAYXK5lq1OoZBoDPh-jijMDEThs6F7pSqWyQ' 
 
-# Name of the specific worksheet (the tab at the bottom).
 WORKSHEET_NAME = 'Sheet1'
 
 
 def append_to_sheet(application_data: dict):
     """
     Appends a new row with application data to the Google Sheet.
-
-    Args:
-        application_data: A dictionary containing the application details.
     """
+    print("--- Attempting to write to Google Sheet using ID ---")
     try:
         # --- Authentication ---
+        print("Authenticating with Google...")
         creds = ServiceAccountCredentials.from_json_keyfile_name(CREDS_FILE, SCOPE)
         client = gspread.authorize(creds)
+        print("Authentication successful.")
 
-        # --- Open the worksheet ---
-        spreadsheet = client.open(SHEET_NAME)
+        # --- Step 2: Open the spreadsheet by its unique ID ---
+        print(f"Opening spreadsheet with ID: '{SHEET_ID}'...")
+        spreadsheet = client.open_by_key(SHEET_ID) # <-- THIS IS THE NEW METHOD
+        print("Spreadsheet opened successfully.")
+
+        # --- Step 3: Select the worksheet ---
+        print(f"Selecting worksheet: '{WORKSHEET_NAME}'...")
         worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
+        print("Worksheet selected successfully.")
 
-        # --- Prepare the row data ---
-        # The order of items in this list MUST match the order of your columns in the sheet.
+        # --- Step 4: Prepare and append the row ---
+        print("Preparing and appending row...")
         row = [
             application_data.get('id', ''),
-            application_data.get('created_at', str(datetime.now())),
+            str(application_data.get('created_at', datetime.now())),
             application_data.get('first_name', ''),
             application_data.get('last_name', ''),
             application_data.get('email', ''),
@@ -52,14 +56,16 @@ def append_to_sheet(application_data: dict):
             application_data.get('previous_experience', ''),
             application_data.get('learning_goals', '')
         ]
-
-        # --- Append the row ---
         worksheet.append_row(row)
         print(f"Successfully wrote application ID {application_data.get('id')} to Google Sheet.")
         return True
 
+    except gspread.exceptions.APIError as e:
+        error_details = json.loads(e.response.text)
+        print("A Google API error occurred:")
+        print(json.dumps(error_details, indent=2))
+        return False
     except Exception as e:
-        # If anything goes wrong, print the error to the console.
-        print(f"Error writing to Google Sheet: {e}")
+        print(f"An unexpected error occurred. Error type: {type(e)}. Error details: {e}")
         return False
 
