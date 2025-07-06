@@ -14,9 +14,13 @@ class ApplicationBase(BaseModel):
     phone_number: str
     country: str
     preferred_course: str
-    age: Optional[int] = None
+    age = str
     previous_experience: Optional[str] = None
     learning_goals: Optional[str] = None
+    parent_name: str
+    relationship: str
+    gender: str
+    whatsapp_number: str
 
 
 # --- Schema for Creating a New Application ---
