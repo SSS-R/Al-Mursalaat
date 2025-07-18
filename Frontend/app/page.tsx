@@ -300,10 +300,325 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-      <section className="py-20 bg-white">{/* ... Features Section ... */}</section>
-      <section id="courses" className="py-20 bg-white">{/* ... Courses Section ... */}</section>
-      <section className="py-20 bg-white">{/* ... Teachers Section ... */}</section>
-      <section className="py-20 bg-white">{/* ... Testimonials Section ... */}</section>
+      {/* Features Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 animate-fade-in-up">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">Why Choose Our Academy?</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Experience the best online Quranic education with our comprehensive learning platform
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                icon: BookOpen,
+                title: "Expert Teachers",
+                desc: "Learn from qualified Islamic scholars and experienced Quran teachers",
+                color: "text-primary",
+              },
+              {
+                icon: Users,
+                title: "One-on-One Classes",
+                desc: "Personalized attention with individual online sessions",
+                color: "text-secondary",
+              },
+              {
+                icon: Clock,
+                title: "Flexible Timing",
+                desc: "Choose your preferred time slots that fit your schedule",
+                color: "text-accent",
+              },
+              {
+                icon: Award,
+                title: "Certified Courses",
+                desc: "Receive certificates upon successful completion of courses",
+                color: "text-primary",
+              },
+            ].map((feature, index) => (
+              <Card
+                key={feature.title}
+                className="text-center shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up group"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <CardHeader className="">
+                  <feature.icon
+                    className={`h-12 w-12 ${feature.color} mx-auto mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
+                  />
+                  <CardTitle className="text-primary group-hover:text-secondary transition-colors duration-300">
+                    {feature.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="">
+                  <p className="text-gray-600">{feature.desc}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Courses Section */}
+      <section id="courses" className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 animate-fade-in-up">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">Our Courses</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Comprehensive Quranic education programs designed for all levels
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                badge: "Beginner",
+                title: "Quran Learning (Kayda)",
+                desc: "Learn Arabic alphabet with proper pronunciation",
+                price: "$40",
+                badgeColor: "bg-primary",
+                features: [
+                  "Arabic alphabet and pronunciation",
+                  "Primary Islamic Studies",
+                  "Reading practice",
+                  "Individual attention",
+                ],
+              },
+              {
+                badge: "Intermediate",
+                title: "Quran Reading (Nazra)",
+                desc: "Learn to read the Quran with proper pronunciation",
+                price: "$50",
+                badgeColor: "bg-secondary",
+                features: ["Reading practice", "Individual attention", "Islamic history", "Discussion sessions"],
+              },
+              {
+                badge: "Advanced",
+                title: "Quran Memorization",
+                desc: "Memorize the Holy Quran with expert guidance",
+                price: "$80",
+                badgeColor: "bg-accent",
+                features: ["Systematic memorization", "Revision techniques", "Progress tracking", "Certification"],
+              },
+            ].map((course, index) => (
+              <Card
+                key={course.title}
+                className="hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-3 animate-fade-in-up group"
+                style={{ animationDelay: `${index * 200}ms` }}
+              >
+                <CardHeader>
+                  <Badge className={`w-fit ${course.badgeColor} transition-all duration-300 group-hover:scale-110`}>
+                    {course.badge}
+                  </Badge>
+                  <CardTitle className="text-primary group-hover:text-secondary transition-colors duration-300">
+                    {course.title}
+                  </CardTitle>
+                  <CardDescription>{course.desc}</CardDescription>
+                </CardHeader>
+                <CardContent className="shadow-xl">
+                  <ul className="space-y-2 text-sm text-gray-600 mb-4">
+                    {course.features.map((feature, i) => (
+                      <li key={i} className="transform transition-all duration-300 hover:translate-x-2">
+                        • {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl font-bold text-primary group-hover:text-secondary transition-colors duration-300">
+                      {course.price}/month
+                    </span>
+                    {/* Update all "Enroll Now" buttons in the courses section to link to admission */}
+                    <Link href="#admission">
+                      <Button className="bg-primary hover:bg-primary/90 transform transition-all duration-300 hover:scale-110 hover:shadow-lg">
+                        Enroll Now
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+      {/* Teachers Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 animate-fade-in-up">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">Meet Our Qualified Teachers</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Learn from experienced Islamic scholars who are passionate about sharing the beauty of the Quran
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Sheikh Abdullah Rahman",
+                qualification: "PhD in Islamic Studies, Al-Azhar University",
+                experience: "15+ years teaching experience",
+                image: "/placeholder.svg?height=300&width=300",
+                quote:
+                  "The Quran is not just a book to be read, but a guide to be lived. Every verse contains wisdom that can transform hearts and minds. Teaching the Quran is my greatest honor.",
+                specialty: "Quran Recitation & Tajweed",
+              },
+              {
+                name: "Ustadha Fatima Al-Zahra",
+                qualification: "Masters in Quranic Sciences, Islamic University of Medina",
+                experience: "12+ years teaching experience",
+                image: "/placeholder.svg?height=300&width=300",
+                quote:
+                  "Understanding the Quran in one's own language opens doors to spiritual enlightenment. I've witnessed countless students find peace and purpose through Quranic studies.",
+                specialty: "Quran Translation & Tafseer",
+              },
+              {
+                name: "Sheikh Muhammad Hassan",
+                qualification: "Hafiz-e-Quran, Certified in Qira'at",
+                experience: "20+ years teaching experience",
+                image: "/placeholder.svg?height=300&width=300",
+                quote:
+                  "Memorizing the Quran is like planting seeds of divine guidance in your heart. Each verse becomes a companion that guides you through life's journey.",
+                specialty: "Quran Memorization (Hifz)",
+              },
+            ].map((teacher, index) => (
+              <Card
+                key={teacher.name}
+                className="hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-3 animate-fade-in-up group overflow-hidden"
+                style={{ animationDelay: `${index * 200}ms` }}
+              >
+                <CardContent className="p-0">
+                  <div className="relative">
+                    <Image
+                      src={teacher.image || "/placeholder.svg"}
+                      alt={teacher.name}
+                      width={300}
+                      height={300}
+                      className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  </div>
+                  <div className="p-6">
+                    <div className="text-center mb-4">
+                      <h3 className="text-xl font-bold text-primary group-hover:text-secondary transition-colors duration-300 mb-1">
+                        {teacher.name}
+                      </h3>
+                      <Badge className="bg-secondary/10 text-secondary hover:bg-secondary hover:text-white transition-all duration-300 mb-2">
+                        {teacher.specialty}
+                      </Badge>
+                      <p className="text-sm text-gray-600 mb-1">{teacher.qualification}</p>
+                      <p className="text-sm text-primary font-semibold">{teacher.experience}</p>
+                    </div>
+                    <blockquote className="text-gray-700 italic text-center border-l-4 border-primary pl-4 group-hover:text-gray-900 transition-colors duration-300">
+                      "{teacher.quote}"
+                    </blockquote>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {/* Why Quranic Education is Important */}
+          <div
+            className="mt-16 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 animate-fade-in-up shadow-xl"
+            style={{ animationDelay: "600ms" }}
+          >
+            <div className="text-center mb-8">
+              <h3 className="text-2xl md:text-3xl font-bold text-primary mb-4">Why Quranic Education Matters</h3>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  icon: BookOpen,
+                  title: "Spiritual Growth",
+                  description: "Deepen your connection with Allah through understanding His words",
+                  color: "text-primary",
+                },
+                {
+                  icon: Users,
+                  title: "Character Building",
+                  description: "Develop moral values and ethical principles for daily life",
+                  color: "text-secondary",
+                },
+                {
+                  icon: Award,
+                  title: "Inner Peace",
+                  description: "Find tranquility and guidance in the divine teachings",
+                  color: "text-accent",
+                },
+                {
+                  icon: Clock,
+                  title: "Lifelong Learning",
+                  description: "Embark on a continuous journey of knowledge and wisdom",
+                  color: "text-primary",
+                },
+              ].map((benefit, index) => (
+                <div
+                  key={benefit.title}
+                  className="text-center group animate-fade-in-up"
+                  style={{ animationDelay: `${700 + index * 100}ms` }}
+                >
+                  <benefit.icon
+                    className={`h-12 w-12 ${benefit.color} mx-auto mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
+                  />
+                  <h4 className="font-semibold text-primary mb-2 group-hover:text-secondary transition-colors duration-300">
+                    {benefit.title}
+                  </h4>
+                  <p className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors duration-300">
+                    {benefit.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+      {/* Testimonials */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 animate-fade-in-up">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">What Our Students Say</h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Sarah Ahmed",
+                location: "Student from USA",
+                text: "The teachers are very patient and knowledgeable. I've learned so much about the Quran in just a few months.",
+              },
+              {
+                name: "Muhammad Hassan",
+                location: "Student from UK",
+                text: "Excellent online platform with flexible timing. Perfect for working professionals like me.",
+              },
+              {
+                name: "Fatima Khan",
+                location: "Parent from Canada",
+                text: "My children love their Quran classes. The teachers make learning fun and engaging.",
+              },
+            ].map((testimonial, index) => (
+              <Card
+                key={testimonial.name}
+                className="hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-2 animate-fade-in-up group shadow-xl"
+                style={{ animationDelay: `${index * 150}ms` }}
+              >
+                <CardContent className="pt-6">
+                  <div className="flex items-center mb-4">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className="h-4 w-4 fill-yellow-400 text-yellow-400 transition-all duration-300 hover:scale-125"
+                        style={{ animationDelay: `${i * 100}ms` }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-gray-600 mb-4 group-hover:text-gray-800 transition-colors duration-300">
+                    "{testimonial.text}"
+                  </p>
+                  <div className="font-semibold text-primary group-hover:text-secondary transition-colors duration-300">
+                    {testimonial.name}
+                  </div>
+                  <div className="text-sm text-gray-500">{testimonial.location}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* --- UPDATED Admission Form Section --- */}
       <section
@@ -386,7 +701,6 @@ export default function HomePage() {
                         <option value="">Select a course</option>
                         <option value="Quran Learning (Kayda)">Quran Learning (Kayda)</option>
                         <option value="Quran Reading (Nazra)">Quran Reading (Nazra)</option>
-                        <option value="Quran Translation">Quran Translation</option>
                         <option value="Quran Memorization">Quran Memorization</option>
                       </select>
                     </div>
@@ -448,10 +762,122 @@ export default function HomePage() {
       </section>
 
       {/* Contact and Footer sections (from your code) */}
-      <section id="contact" className="py-20 bg-gray-50">{/* ... */}</section>
-      <footer className="bg-primary text-white py-12">{/* ... */}</footer>
+      {/* Contact Section */}
+      <section id="contact" className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 animate-fade-in-up">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">Contact Us</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Have questions? We're here to help you start your Quranic learning journey.
+            </p>
+          </div>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {[
+              {
+                icon: Phone,
+                title: "WhatsApp",
+                info: ["+8801601092024"],
+                color: "text-primary",
+              },
+              {
+                icon: Mail,
+                title: "Email",
+                info: ["almursalaatonline@gmail.com"],
+                color: "text-secondary",
+              },
+              {
+                icon: MapPin,
+                title: "Facebook",
+                info: ["Al Mursalaat Online Islamic Academy"],
+                color: "text-accent",
+              },
+            ].map((contact, index) => (
+              <Card
+                key={contact.title}
+                className="text-center hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-3 animate-fade-in-up group"
+                style={{ animationDelay: `${index * 200}ms` }}
+              >
+                <CardContent className="pt-8">
+                  <contact.icon
+                    className={`h-12 w-12 ${contact.color} mx-auto mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
+                  />
+                  <h3 className="text-xl font-semibold text-primary mb-2 group-hover:text-secondary transition-colors duration-300">
+                    {contact.title}
+                  </h3>
+                  {contact.info.map((info, i) => (
+                    <p key={i} className="text-gray-600 group-hover:text-gray-800 transition-colors duration-300">
+                      {info}
+                    </p>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* Terms and Conditions Modal (from your code) */}
+      {/* Footer */}
+      <footer className="bg-primary text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="animate-fade-in-up">
+              <Image
+                src="/images/logo-icon.png"
+                alt="AL Mursalaat Academy"
+                width={80}
+                height={80}
+                className="mb-4 transition-transform duration-300 hover:scale-110"
+              />
+              <p className="text-green-100 mb-4">
+                Dedicated to providing quality online Quranic education to students worldwide.
+              </p>
+            </div>
+            {[
+              { title: "Quick Links", links: ["Home", "Courses", "About", "Admission"] },
+              {
+                title: "Courses",
+                links: ["Quran Reading (Nazra)", "Quran Learning (Kayda)", "Quran Memorization", "Islamic Studies"],
+              },
+              {
+                title: "Contact Info",
+                links: ["+1 (555) 123-4567", "info@almursalaat.com", "123 Islamic Center", "Education District"],
+              },
+            ].map((section, index) => (
+              <div
+                key={section.title}
+                className="animate-fade-in-up"
+                style={{ animationDelay: `${(index + 1) * 150}ms` }}
+              >
+                <h4 className="text-lg font-semibold mb-4">{section.title}</h4>
+                <ul className="space-y-2 text-green-100">
+                  {section.links.map((link, i) => (
+                    <li key={i}>
+                      {section.title === "Quick Links" || section.title === "Courses" ? (
+                        <Link
+                          href="#"
+                          className="hover:text-white transition-all duration-300 hover:translate-x-2 inline-block"
+                        >
+                          {link}
+                        </Link>
+                      ) : (
+                        <span className="hover:text-white transition-colors duration-300">{link}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div
+            className="border-t border-green-600 mt-8 pt-8 text-center text-green-100 animate-fade-in-up"
+            style={{ animationDelay: "800ms" }}
+          >
+            <p>&copy; 2024 AL Mursalaat Online Islamic Academy. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Terms and Conditions Modal */}
       <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
     </div>
   )
