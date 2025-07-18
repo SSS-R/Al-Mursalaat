@@ -14,7 +14,7 @@ class ApplicationBase(BaseModel):
     phone_number: str
     country: str
     preferred_course: str
-    age : str
+    age : int
     previous_experience: Optional[str] = None
     learning_goals: Optional[str] = None
     parent_name: str
