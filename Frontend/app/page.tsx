@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 
-// Counter Animation Hook (no changes)
+// Counter Animation Hook (from your code)
 function useCounter(end: number, duration = 2000) {
   const [count, setCount] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
@@ -38,7 +38,7 @@ function useCounter(end: number, duration = 2000) {
   return { count, setIsVisible }
 }
 
-// Intersection Observer Hook (no changes)
+// Intersection Observer Hook (from your code)
 function useInView(threshold = 0.1) {
   const [ref, setRef] = useState<HTMLElement | null>(null)
   const [isInView, setIsInView] = useState(false)
@@ -95,79 +95,13 @@ function TermsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
         "Payment Policy: Tuition must be paid on time according to the selected monthly plan.",
       ],
     },
-    {
-      id: "attendance",
-      title: "3. Attendance Policy",
-      content: [
-        "A minimum of 90% attendance is required to remain in good standing.",
-        "In one-on-one classes, we kindly ask that any absence be communicated at least 6 hours in advance.",
-        "Frequent rescheduling or absences without notice may affect continued enrollment or preferred time slots.",
-      ],
-    },
-    {
-      id: "dress",
-      title: "4. Dress Code Policy",
-      content: [
-        "All students and teachers must adhere to Islamic dress guidelines during class.",
-        "Clothing must cover the entire body, be loose-fitting, non-transparent, and modest.",
-        "Male students and teachers should wear a clean jubbah or Islamic dress with a clean tupi.",
-        "Tight or short pants are not permitted.",
-        "Female students and teachers must wear a plain abaya or long dress with a large headscarf (Hijab).",
-        "Makeup, including light makeup, is not allowed during class sessions.",
-      ],
-    },
-    {
-      id: "privacy",
-      title: "5. Privacy Policy",
-      content: [
-        "For All Students:",
-        "• Teachers are committed to maintaining the student's privacy.",
-        "• No personal information may be requested or discussed.",
-        "• Any inquiries beyond academic matters must be referred to academy authorities.",
-        "• Only authorized academy staff may enter the virtual classroom.",
-        "• Students are advised to have a plain wall or curtain behind them during class.",
-        "",
-        "Additional Guidelines for Female Teachers & Students:",
-        "• Full privacy and proper veil (Hijab) of female teachers must be respected.",
-        "• Female students above age 12 will be assigned female teachers only.",
-        "• Male guardians are not allowed to assist female students in class.",
-        "• Female guardians assisting students must observe proper Hijab and Islamic etiquette.",
-        "• Parents must protect the teacher's privacy and not share personal information.",
-      ],
-    },
-    {
-      id: "conduct",
-      title: "6. Code of Conduct",
-      content: [
-        "Respectful behavior, Islamic etiquette, and appropriate language must be maintained at all times.",
-        "Disrespect towards instructors, students, or the academy may lead to disciplinary action.",
-        "Students must be mentally present, focused, and cooperative during sessions.",
-      ],
-    },
-    {
-      id: "fees",
-      title: "7. Fees & Payments",
-      content: [
-        "Course fees must be paid on the agreed date each month.",
-        "Refunds are not available unless a class is cancelled by the academy.",
-        "Failure to make timely payments may result in class access being paused.",
-      ],
-    },
-    {
-      id: "certification",
-      title: "8. Certification",
-      content: [
-        "Certificates of completion will be awarded to students who meet attendance and course requirements.",
-        "Certificates will be provided in digital format unless otherwise arranged.",
-      ],
-    },
-    {
-      id: "amendments",
-      title: "9. Amendments",
-      content: [
-        "The academy reserves the right to update these Terms & Conditions at any time with appropriate notice to students and parents.",
-      ],
-    },
+    { id: "attendance", title: "3. Attendance Policy", content: ["A minimum of 90% attendance is required to remain in good standing.", "In one-on-one classes, we kindly ask that any absence be communicated at least 6 hours in advance.", "Frequent rescheduling or absences without notice may affect continued enrollment or preferred time slots."] },
+    { id: "dress", title: "4. Dress Code Policy", content: ["All students and teachers must adhere to Islamic dress guidelines during class.", "Clothing must cover the entire body, be loose-fitting, non-transparent, and modest.", "Male students and teachers should wear a clean jubbah or Islamic dress with a clean tupi.", "Tight or short pants are not permitted.", "Female students and teachers must wear a plain abaya or long dress with a large headscarf (Hijab).", "Makeup, including light makeup, is not allowed during class sessions."] },
+    { id: "privacy", title: "5. Privacy Policy", content: ["For All Students:", "• Teachers are committed to maintaining the student's privacy.", "• No personal information may be requested or discussed.", "• Any inquiries beyond academic matters must be referred to academy authorities.", "• Only authorized academy staff may enter the virtual classroom.", "• Students are advised to have a plain wall or curtain behind them during class.", "", "Additional Guidelines for Female Teachers & Students:", "• Full privacy and proper veil (Hijab) of female teachers must be respected.", "• Female students above age 12 will be assigned female teachers only.", "• Male guardians are not allowed to assist female students in class.", "• Female guardians assisting students must observe proper Hijab and Islamic etiquette.", "• Parents must protect the teacher's privacy and not share personal information."] },
+    { id: "conduct", title: "6. Code of Conduct", content: ["Respectful behavior, Islamic etiquette, and appropriate language must be maintained at all times.", "Disrespect towards instructors, students, or the academy may lead to disciplinary action.", "Students must be mentally present, focused, and cooperative during sessions."] },
+    { id: "fees", title: "7. Fees & Payments", content: ["Course fees must be paid on the agreed date each month.", "Refunds are not available unless a class is cancelled by the academy.", "Failure to make timely payments may result in class access being paused."] },
+    { id: "certification", title: "8. Certification", content: ["Certificates of completion will be awarded to students who meet attendance and course requirements.", "Certificates will be provided in digital format unless otherwise arranged."] },
+    { id: "amendments", title: "9. Amendments", content: ["The academy reserves the right to update these Terms & Conditions at any time with appropriate notice to students and parents."] },
   ]
 
   if (!isOpen) return null
@@ -228,7 +162,7 @@ function TermsModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
 
 export default function HomePage() {
-  // State for Counters (no changes)
+  // State for Counters (from your code)
   const [studentsRef, studentsInView] = useInView()
   const [teachersRef, teachersInView] = useInView()
   const [experienceRef, experienceInView] = useInView()
@@ -255,7 +189,6 @@ export default function HomePage() {
     const formData = new FormData(event.currentTarget);
     const data: { [key: string]: any } = {};
     formData.forEach((value, key) => {
-      // Convert empty strings for optional fields to null
       if (value === '' && (key === 'age' || key === 'previous_experience' || key === 'learning_goals' || key === 'whatsapp_number')) {
         data[key] = null;
       } else {
@@ -290,7 +223,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
-      {/* Header (No changes) */}
+      {/* Header (from your code) */}
       <header className="bg-white shadow-sm border-b sticky top-0 z-50 backdrop-blur-sm bg-white/95 transition-all duration-300">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -325,9 +258,8 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section and other sections (no changes) */}
-      {/* ... */}
-       <section id="home" className="py-20 relative overflow-hidden min-h-[600px]" style={{ backgroundImage: `linear-gradient(rgba(19, 84, 71, 0.8), rgba(19, 84, 71, 0.6)), url('/images/mosque-interior.jpg')`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundAttachment: "fixed" }}>
+      {/* Hero Section and other sections from your code */}
+      <section id="home" className="py-20 relative overflow-hidden min-h-[600px]" style={{ backgroundImage: `linear-gradient(rgba(19, 84, 71, 0.8), rgba(19, 84, 71, 0.6)), url('/images/mosque-interior.jpg')`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat", backgroundAttachment: "fixed" }}>
         <div className="absolute inset-0 bg-gradient-to-r from-[#DAF1DE]/60 via-[#9EB69B]/40 to-[#DAF1DE]/60"></div>
         <div className="relative z-10">
           <div className="container mx-auto px-4">
@@ -515,11 +447,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Contact and Footer sections (no changes) */}
+      {/* Contact and Footer sections (from your code) */}
       <section id="contact" className="py-20 bg-gray-50">{/* ... */}</section>
       <footer className="bg-primary text-white py-12">{/* ... */}</footer>
 
-      {/* Terms and Conditions Modal */}
+      {/* Terms and Conditions Modal (from your code) */}
       <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
     </div>
   )
