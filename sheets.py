@@ -15,11 +15,9 @@ SCOPE = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file"
 ]
-CREDS_FILE = 'credentials.json' # Your Google service account file
+CREDS_FILE = 'credentials.json'
 
-# --- IMPROVEMENT: Use Environment Variable for Sheet ID ---
-# Avoid hardcoding IDs. This makes it easier to switch to a different sheet
-# for testing or a new version without changing the code.
+# --- Use Environment Variable for Sheet ID ---
 SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
 WORKSHEET_NAME = 'Sheet1'
 
@@ -28,24 +26,34 @@ def append_to_sheet(application_data: dict):
     """
     Appends a new row with application data to the Google Sheet.
     """
+    # --- STEP 1: ADD MORE LOGGING ---
+    print("--- [SHEETS] Task started. ---")
+
     if not SHEET_ID:
-        print("ERROR: GOOGLE_SHEET_ID not found in environment variables. Cannot write to sheet.")
+        print("--- [SHEETS] ERROR: GOOGLE_SHEET_ID not found in environment variables. Cannot write to sheet.")
         return False
 
-    print("--- Attempting to write to Google Sheet ---")
+    print(f"--- [SHEETS] Using Sheet ID: {SHEET_ID}")
+
     try:
+        print("--- [SHEETS] Attempting to authorize with credentials...")
         creds = ServiceAccountCredentials.from_json_keyfile_name(CREDS_FILE, SCOPE)
         client = gspread.authorize(creds)
-        spreadsheet = client.open_by_key(SHEET_ID)
-        worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
+        print("--- [SHEETS] Authorization successful.")
 
-        # --- FIX: Match the order of columns in your Google Sheet ---
-        # The keys used here (e.g., 'gender', 'whatsapp_number') now correctly
-        # match the data being passed from main.py.
-        # IMPORTANT: Ensure this order exactly matches your Google Sheet columns.
+        print("--- [SHEETS] Opening spreadsheet by key...")
+        spreadsheet = client.open_by_key(SHEET_ID)
+        print("--- [SHEETS] Spreadsheet opened successfully.")
+
+        print(f"--- [SHEETS] Opening worksheet: {WORKSHEET_NAME}...")
+        worksheet = spreadsheet.worksheet(WORKSHEET_NAME)
+        print("--- [SHEETS] Worksheet opened successfully.")
+
+        # Match the order of columns in your Google Sheet
+        print("--- [SHEETS] Preparing row data...")
         row = [
             application_data.get('id', ''),
-            application_data.get('created_at', str(datetime.now())),
+            str(application_data.get('created_at', str(datetime.now()))),
             application_data.get('first_name', ''),
             application_data.get('last_name', ''),
             application_data.get('gender', ''),
@@ -60,18 +68,23 @@ def append_to_sheet(application_data: dict):
             application_data.get('previous_experience', ''),
             application_data.get('learning_goals', '')
         ]
+        print(f"--- [SHEETS] Row data prepared: {row}")
         
-        print(f"Appending row for application ID {application_data.get('id')}...")
+        print("--- [SHEETS] Appending row to sheet...")
         worksheet.append_row(row)
-        print("Successfully wrote to Google Sheet.")
+        print(f"--- [SHEETS] SUCCESS: Successfully wrote application ID {application_data.get('id')} to Google Sheet.")
         return True
 
+    # --- STEP 2: CATCH SPECIFIC ERRORS ---
     except gspread.exceptions.SpreadsheetNotFound:
-        print(f"ERROR: Spreadsheet not found. Check SHEET_ID and sharing permissions.")
+        print(f"--- [SHEETS] FATAL ERROR: Spreadsheet not found. Check SHEET_ID and sharing permissions.")
         return False
     except gspread.exceptions.WorksheetNotFound:
-        print(f"ERROR: Worksheet '{WORKSHEET_NAME}' not found.")
+        print(f"--- [SHEETS] FATAL ERROR: Worksheet '{WORKSHEET_NAME}' not found.")
         return False
     except Exception as e:
-        print(f"An unexpected error occurred with Google Sheets: {e}")
+        # This will print the exact error message to our log
+        print(f"--- [SHEETS] A FATAL UNEXPECTED ERROR occurred: {e}")
+        # Also print the type of error for more detail
+        print(f"--- [SHEETS] Error Type: {type(e)}")
         return False
