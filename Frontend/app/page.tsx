@@ -187,21 +187,20 @@ export default function HomePage() {
     setMessage(null);
 
     const formData = new FormData(event.currentTarget);
-    const data: { [key: string]: any } = {};
-    formData.forEach((value, key) => {
-      if (value === '' && (key === 'age' || key === 'previous_experience' || key === 'learning_goals' || key === 'whatsapp_number')) {
-        data[key] = null;
-      } else {
-        data[key] = value;
-      }
-    });
-    if (data.age) data.age = parseInt(data.age, 10);
-
+    const data = Object.fromEntries(formData.entries());
+    const payload = {
+    ...data,
+    age: parseInt(data.age as string, 10), // Ensure age is a number
+    // Ensure optional fields that are empty strings are sent as null
+    previous_experience: data.previous_experience || null,
+    learning_goals: data.learning_goals || null,
+    whatsapp_number: data.whatsapp_number || null,
+    };
     try {
       const response = await fetch('https://almursalaatonline.com/submit-application/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
       const result = await response.json();
       if (response.ok) {
@@ -663,13 +662,13 @@ export default function HomePage() {
                       <Label htmlFor="gender">Gender *</Label>
                       <select id="gender" name="gender" required className="w-full p-2 border border-gray-300 rounded-md transition-all duration-300 focus:scale-105 focus:shadow-lg">
                         <option value="">Select Gender</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
+                        <option value="male">male</option>
+                        <option value="female">female</option>
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="age">Age</Label>
-                      <Input id="age" name="age" type="number" placeholder="Enter your age" className="transition-all duration-300 focus:scale-105 focus:shadow-lg" />
+                      <Label htmlFor="age">Age *</Label>
+                      <Input id="age" name="age" type="number" placeholder="Enter your age" required min="1" className="transition-all duration-300 focus:scale-105 focus:shadow-lg" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="parent_name">Parent's Name *</Label>
