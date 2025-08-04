@@ -5,6 +5,9 @@ from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+import redis.asyncio as redis
 
 import crud
 import models
@@ -24,6 +27,13 @@ app = FastAPI(
     description="API for handling student applications.",
     version="1.0.0"
 )
+
+# --- Initialize the rate limiter ---
+@app.on_event("startup")
+async def startup():
+    # Connect to your local Redis server
+    redis_connection = redis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
+    await FastAPILimiter.init(redis_connection)
 
 # --- CORS Middleware ---
 # This allows your frontend application to make requests to this backend.
@@ -62,7 +72,7 @@ def read_root():
     """A simple endpoint to confirm the API is running."""
     return {"status": "ok", "message": "Welcome to the Al-Mursalaat API!"}
 
-@app.post("/submit-application/", response_model=schemas.Application)
+@app.post("/submit-application/", response_model=schemas.Application, dependencies=[Depends(RateLimiter(times=3, minutes=2))])
 def submit_application(
     application: schemas.ApplicationCreate,
     background_tasks: BackgroundTasks,

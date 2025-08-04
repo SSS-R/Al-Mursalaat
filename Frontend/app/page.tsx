@@ -449,25 +449,25 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                name: "Sheikh Abdullah Rahman",
-                qualification: "PhD in Islamic Studies, Al-Azhar University",
-                experience: "15+ years teaching experience",
-                image: "/placeholder.svg?height=300&width=300",
+                name: "Hafiz Jahidul Islam",
+                qualification: "BA Hon's & Masters Da'wah and Islamic Studies, International Islamic University, Chittagong",
+                experience: "7+ years teaching experience",
+                image: "/placeholder-01.jpeg?height=300&width=300",
                 quote:
                   "The Quran is not just a book to be read, but a guide to be lived. Every verse contains wisdom that can transform hearts and minds. Teaching the Quran is my greatest honor.",
-                specialty: "Quran Recitation & Tajweed",
+                specialty: "Quran Recitation & Tafseer",
               },
               {
-                name: "Ustadha Fatima Al-Zahra",
-                qualification: "Masters in Quranic Sciences, Islamic University of Medina",
-                experience: "12+ years teaching experience",
+                name: "Mahi Sania Choudhury",
+                qualification: "BA Hon's, Shanto-Mariam University of Creative Technology University, Dhaka",
+                experience: "3+ years teaching experience",
                 image: "/placeholder.svg?height=300&width=300",
                 quote:
                   "Understanding the Quran in one's own language opens doors to spiritual enlightenment. I've witnessed countless students find peace and purpose through Quranic studies.",
                 specialty: "Quran Translation & Tafseer",
               },
               {
-                name: "Sheikh Muhammad Hassan",
+                name: "Mst. Jannatul Fardaus Mymuna",
                 qualification: "Hafiz-e-Quran, Certified in Qira'at",
                 experience: "20+ years teaching experience",
                 image: "/placeholder.svg?height=300&width=300",
@@ -839,7 +839,7 @@ export default function HomePage() {
               },
               {
                 title: "Contact Info",
-                links: ["+1 (555) 123-4567", "info@almursalaat.com", "123 Islamic Center", "Education District"],
+                links: ["+8801601092024", "almursalaatonline@gmail.com", "KA/53/2, Kuril, Pragati Sharani, Khilkhet, Vatara, Dhaka-1229"],
               },
             ].map((section, index) => (
               <div
