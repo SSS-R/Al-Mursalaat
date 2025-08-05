@@ -452,7 +452,7 @@ export default function HomePage() {
                 name: "Hafiz Jahidul Islam",
                 qualification: "BA Hon's & Masters Da'wah and Islamic Studies, International Islamic University, Chittagong",
                 experience: "7+ years teaching experience",
-                image: "/placeholder-01.jpeg?height=300&width=300",
+                image: "/placeholder-01.jpeg",
                 quote:
                   "The Quran is not just a book to be read, but a guide to be lived. Every verse contains wisdom that can transform hearts and minds. Teaching the Quran is my greatest honor.",
                 specialty: "Quran Recitation & Tafseer",
@@ -488,9 +488,9 @@ export default function HomePage() {
                       alt={teacher.name}
                       width={300}
                       height={300}
-                      className="w-full h-64 object-cover transition-transform duration-300 group-hover:scale-110"
+                      className="m-auto h-64 transition-transform duration-300 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    {/*<div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>*/}
                   </div>
                   <div className="p-6">
                     <div className="text-center mb-4">
