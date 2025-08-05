@@ -2,31 +2,32 @@
 
 import { MetadataRoute } from 'next'
 
+// --- NEW: Explicitly declare the route as static ---
+// This tells Next.js to treat this file as purely static, which is
+// required for the `output: 'export'` configuration.
+export const dynamic = 'force-static'
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = 'https://almursalaatonline.com'
 
   return [
     {
       url: baseUrl,
-      // lastModified is removed
       changeFrequency: 'yearly',
       priority: 1,
     },
     {
       url: `${baseUrl}/#courses`,
-      // lastModified is removed
       changeFrequency: 'monthly',
       priority: 0.8,
     },
     {
       url: `${baseUrl}/#about`,
-      // lastModified is removed
       changeFrequency: 'monthly',
       priority: 0.5,
     },
      {
       url: `${baseUrl}/#admission`,
-      // lastModified is removed
       changeFrequency: 'yearly',
       priority: 0.9,
     },
