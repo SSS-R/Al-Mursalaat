@@ -450,30 +450,30 @@ export default function HomePage() {
             {[
               {
                 name: "Hafiz Jahidul Islam",
-                qualification: "BA Hon's & Masters Da'wah and Islamic Studies, International Islamic University, Chittagong",
+                qualification: "BA Hon's & Masters Da'wah and Islamic Studies, International Islamic University, Chittagong.",
                 experience: "7+ years teaching experience",
                 image: "/placeholder-01.jpeg",
                 quote:
-                  "The Quran is not just a book to be read, but a guide to be lived. Every verse contains wisdom that can transform hearts and minds. Teaching the Quran is my greatest honor.",
+                  "Memorizing the Quran is like planting seeds of divine guidance in your heart. Each verse becomes a companion that guides you through life's journey.",
                 specialty: "Quran Recitation & Tafseer",
               },
               {
                 name: "Mahi Sania Choudhury",
-                qualification: "BA Hon's, Shanto-Mariam University of Creative Technology University, Dhaka",
-                experience: "3+ years teaching experience",
-                image: "/placeholder.svg?height=300&width=300",
+                qualification: "BA Hon's Da'wah and Islamic Studies, International Islamic University, Chittagong",
+                experience: "4+ years teaching experience",
+                image: "/placeholder.svg",
                 quote:
                   "Understanding the Quran in one's own language opens doors to spiritual enlightenment. I've witnessed countless students find peace and purpose through Quranic studies.",
                 specialty: "Quran Translation & Tafseer",
               },
               {
                 name: "Mst. Jannatul Fardaus Mymuna",
-                qualification: "Hafiz-e-Quran, Certified in Qira'at",
-                experience: "20+ years teaching experience",
-                image: "/placeholder.svg?height=300&width=300",
+                qualification: "BA Hon's English, Shanto-Mariam University of Creative Technology University, Dhaka",
+                experience: "3+ years teaching experience",
+                image: "/placeholder-02.jpeg",
                 quote:
-                  "Memorizing the Quran is like planting seeds of divine guidance in your heart. Each verse becomes a companion that guides you through life's journey.",
-                specialty: "Quran Memorization (Hifz)",
+                  "The Quran is not just a book to be read, but a guide to be lived. Every verse contains wisdom that can transform hearts and minds. Teaching the Quran is my greatest honor.",
+                specialty: "Kayda & Nazra",
               },
             ].map((teacher, index) => (
               <Card
@@ -488,7 +488,7 @@ export default function HomePage() {
                       alt={teacher.name}
                       width={300}
                       height={300}
-                      className="m-auto h-64 transition-transform duration-300 group-hover:scale-110"
+                      className="m-auto w-74 h-74 transition-transform duration-300 group-hover:scale-110"
                     />
                     {/*<div className="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>*/}
                   </div>
