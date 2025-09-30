@@ -1,6 +1,6 @@
 # main.py
 
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 import redis.asyncio as redis
+import jwt
+from jwt.exceptions import InvalidTokenError
 
 import crud
 import models
@@ -19,14 +21,27 @@ import email_sender
 # It's good practice to load environment variables at the start of your application
 load_dotenv()
 
+# --- ADD THIS TEMPORARY DEBUG LINE ---
+print(f"--- DEBUG: Attempting to connect with USER='{os.getenv('DB_USER')}' to HOST='{os.getenv('DB_HOST')}' ---")
+
 # Create the database tables based on your models
 models.Base.metadata.create_all(bind=engine)
+
+
+# --- ADD your JWT Secret Key ---
+# IMPORTANT: This secret key MUST be the exact same one you used in your
+# Next.js login API route (`app/api/auth/login/route.ts`).
+JWT_SECRET = os.getenv("JWT_SECRET", "YOUR_SUPER_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG")
+ALGORITHM = "HS256"
+
+
 
 app = FastAPI(
     title="Al-Mursalaat API",
     description="API for handling student applications.",
     version="1.0.0"
 )
+
 
 # --- Initialize the rate limiter ---
 @app.on_event("startup")
@@ -65,7 +80,67 @@ def get_db():
     finally:
         db.close()
 
+# --- 1. ADD THE NEW SECURITY DEPENDENCY ---
+# This function acts as a security guard for our admin-only endpoints.
+async def get_current_admin(request: Request, db: Session = Depends(get_db)):
+    """
+    Reads the session cookie, validates the JWT, and ensures the user has an admin role.
+    """
+    token = request.cookies.get("sessionToken")
+
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated: No session token found.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    try:
+        # Decode the token using the secret key
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[ALGORITHM])
+        email: str = payload.get("email")
+        role: str = payload.get("role")
+        if email is None or role is None:
+            raise HTTPException(status_code=401, detail="Invalid token: Missing payload.")
+        
+        # This is where we check for permission!
+        if role not in ["admin", "supreme-admin"]:
+            raise HTTPException(status_code=403, detail="Forbidden: Insufficient permissions.")
+
+        # You could add a check here to see if the user exists in the DB if needed
+        # user = crud.get_user_by_email(db, email=email) ...
+        
+        return payload # Return the user's data if token is valid
+    
+    except InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token: Could not validate credentials.")
+
 # --- API Endpoints ---
+
+# --- 2. ADD THE NEW ADMIN-ONLY ENDPOINT ---
+# This goes below the get_db() function and before your existing endpoints.
+
+@app.post("/admin/add-student/", response_model=schemas.Application, status_code=201)
+def add_student_by_admin(
+    application: schemas.ApplicationCreate,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin) # This line PROTECTS the endpoint
+):
+    """
+    An admin-only endpoint to create a new student record manually.
+    """
+    # Check for duplicate email
+    db_application = crud.get_application_by_email(db, email=application.email)
+    if db_application:
+        raise HTTPException(status_code=400, detail="A student with this email address already exists.")
+
+    # We can reuse the existing CRUD function!
+    print(f"Admin '{current_admin.get('email')}' is adding a new student.")
+    new_student = crud.create_application(db=db, application=application)
+    
+    # Note: We are not running background tasks like sending confirmation emails
+    # because this is a manual admin action. This can be added if needed.
+    
+    return new_student
 
 @app.get("/")
 def read_root():
