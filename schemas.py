@@ -53,3 +53,23 @@ class Application(ApplicationBase):
         # and not just from dictionaries. It's crucial for converting DB objects
         # to JSON responses.
         from_attributes = True
+
+
+class UserBase(BaseModel):
+    name: str
+    email: EmailStr
+    phone_number: str
+    whatsapp_number: Optional[str] = None
+
+class UserCreate(UserBase):
+    """Schema for data received from the frontend to create a new admin."""
+    role: str = "admin"
+
+class User(UserBase):
+    """Schema for returning user data from the API (omits password)."""
+    id: int
+    role: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

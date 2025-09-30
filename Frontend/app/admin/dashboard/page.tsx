@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useMemo, FormEvent } from 'react'; // Added FormEvent
+import { useState, useMemo, FormEvent, useEffect } from 'react'; // Added FormEvent
 import {
   Users, Home, BookOpen, UserPlus, LogOut, ChevronDown,
   X, Shield, PlusCircle
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+
+// Define a type for our user data for better TypeScript support
+type User = {
+  email: string;
+  role: 'supreme-admin' | 'admin';
+};
 
 // --- MOCK DATA ---
 const mockStudents = [
@@ -210,7 +216,32 @@ function ManageStudentModal({ student, onClose, onSave }: { student: any; onClos
 // --- MAIN DASHBOARD COMPONENT ---
 export default function AdminDashboardPage() {
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null); // State to hold user data
+  const [isLoading, setIsLoading] = useState(true); // Loading state
   const router = useRouter();
+
+// --- NEW: Fetch user data on page load ---
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (!response.ok) {
+          // If not authenticated, redirect to login
+          router.push('/admin/login');
+          return;
+        }
+        const userData: User = await response.json();
+        setUser(userData);
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        router.push('/admin/login');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUser();
+  }, [router]);
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); // State for the new modal
   const [isStudentsOpen, setIsStudentsOpen] = useState(true);
   const [studentView, setStudentView] = useState('all');
@@ -271,9 +302,13 @@ const handleSaveNewStudent = async (newStudentData: any) => {
     unassigned: 'Unassigned Students',
   };
 
-  return (
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
+
+return (
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar (Unchanged) */}
+      {/* Sidebar */}
       <aside className="w-64 bg-white dark:bg-gray-800 shadow-md flex-shrink-0">
         <div className="p-6 text-center">
           <h2 className="text-2xl font-bold text-primary">Admin Panel</h2>
@@ -317,10 +352,15 @@ const handleSaveNewStudent = async (newStudentData: any) => {
             <BookOpen className="w-5 h-5" />
             <span className="mx-4 font-medium">Teachers</span>
           </a>
-          <a href="#" className="mt-2 flex items-center px-4 py-3 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white rounded-lg">
-            <Shield className="w-5 h-5" />
-            <span className="mx-4 font-medium">Admins</span>
-          </a>
+
+          {/* --- CONDITIONALLY RENDERED ADMINS LINK --- */}
+          {user?.role === 'supreme-admin' && (
+            <a href="#" className="mt-2 flex items-center px-4 py-3 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white rounded-lg">
+              <Shield className="w-5 h-5" />
+              <span className="mx-4 font-medium">Admins</span>
+            </a>
+          )}
+
         </nav>
         <div className="absolute bottom-0 w-64 p-6 border-t dark:border-gray-700">
           <a href="#" className="flex items-center text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white -mx-2 px-2 py-2 rounded-lg">
@@ -338,7 +378,6 @@ const handleSaveNewStudent = async (newStudentData: any) => {
                 <p className="text-gray-500 dark:text-gray-400">Manage new and existing student applications.</p>
             </div>
             <div className="flex items-center space-x-4">
-                {/* This button now opens the new modal */}
                 <button 
                     onClick={() => setIsAddModalOpen(true)}
                     className="flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90">
@@ -351,7 +390,8 @@ const handleSaveNewStudent = async (newStudentData: any) => {
                 </button>
             </div>
         </div>
-        {/* ... (Filter controls and table are unchanged) ... */}
+
+        {/* Filter Controls */}
         <div className="mt-4 flex items-center space-x-4">
             <div>
                 <label htmlFor="countryFilter" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Filter by Country</label>
@@ -441,4 +481,3 @@ const handleSaveNewStudent = async (newStudentData: any) => {
       />
     </div>
   );
-}

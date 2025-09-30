@@ -85,3 +85,39 @@ def send_admin_notification(application_data: dict):
     except Exception as e:
         print(f"Error sending admin notification email: {e}")
 
+
+
+def send_admin_credentials_email(admin_data: dict, temp_password: str):
+    """Sends a welcome email to a new admin with their temporary password."""
+    if not SENDGRID_API_KEY:
+        print("ERROR: SENDGRID_API_KEY not found. Cannot send email.")
+        return
+
+    admin_email = admin_data.get('email')
+    admin_name = admin_data.get('name', 'Admin')
+
+    html_content = f"""
+    <h3>Welcome to the Al-Mursalaat Admin Team, {admin_name}!</h3>
+    <p>An account has been created for you. You can log in to the admin panel using the following credentials:</p>
+    <ul>
+        <li><strong>Username:</strong> {admin_email}</li>
+        <li><strong>Temporary Password:</strong> {temp_password}</li>
+    </ul>
+    <p>It is strongly recommended that you change your password after your first login (we will build this feature later).</p>
+    <br>
+    <p>Sincerely,</p>
+    <p>The Al-Mursalaat Team</p>
+    """
+
+    message = Mail(
+        from_email=FROM_EMAIL,
+        to_emails=admin_email,
+        subject='Your New Admin Account for Al-Mursalaat',
+        html_content=html_content
+    )
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"Admin credentials email sent to {admin_email}. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"Error sending admin credentials email: {e}")

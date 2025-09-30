@@ -34,3 +34,19 @@ class Application(Base):
     # Timestamps are handled automatically by the database
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class User(Base):
+    """
+    SQLAlchemy model for the 'users' table.
+    This will store admins and the supreme admin.
+    """
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
+    email = Column(String, unique=True, index=True, nullable=False)
+    phone_number = Column(String)
+    whatsapp_number = Column(String, nullable=True)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, default="admin") # e.g., 'admin' or 'supreme-admin'
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
