@@ -192,6 +192,32 @@ def create_admin_user(
     
     return new_user
 
+@app.delete("/admin/users/{user_id}", response_model=schemas.User)
+def delete_admin_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """
+    An endpoint for a supreme-admin to delete another admin user.
+    """
+    # Ensure only the supreme-admin can delete users
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    # Check if the user to be deleted exists
+    user_to_delete = crud.get_user(db, user_id=user_id)
+    if user_to_delete is None:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    # Prevent a supreme-admin from deleting themselves
+    if user_to_delete.email == current_admin.get("email"):
+        raise HTTPException(status_code=400, detail="Action not allowed: You cannot delete your own account.")
+
+    # Proceed with deletion
+    crud.delete_user(db=db, user_id=user_id)
+    return user_to_delete
+
 @app.get("/")
 def read_root():
     """A simple endpoint to confirm the API is running."""

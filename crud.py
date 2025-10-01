@@ -53,3 +53,15 @@ def get_user_by_email(db: Session, email: str):
 def get_users(db: Session, skip: int = 0, limit: int = 100):
     """Retrieves all user records from the database with pagination."""
     return db.query(models.User).offset(skip).limit(limit).all()
+
+def get_user(db: Session, user_id: int):
+    """Queries the database for a user with a specific ID."""
+    return db.query(models.User).filter(models.User.id == user_id).first()
+
+def delete_user(db: Session, user_id: int):
+    """Deletes a user from the database by their ID."""
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if db_user:
+        db.delete(db_user)
+        db.commit()
+    return db_user
