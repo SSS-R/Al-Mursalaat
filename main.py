@@ -255,3 +255,146 @@ def submit_application(
     background_tasks.add_task(email_sender.send_admin_notification, application_data=application_dict)
 
     return new_application
+
+@app.get("/admin/teachers/", response_model=list[schemas.Teacher])
+def read_teachers(
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Retrieves a list of all teachers. Accessible by any admin."""
+    teachers = crud.get_teachers(db, skip=skip, limit=limit)
+    return teachers
+
+@app.post("/admin/teachers/", response_model=schemas.Teacher, status_code=201)
+def create_new_teacher(
+    teacher: schemas.TeacherCreate, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Creates a new teacher. Only accessible by a supreme-admin."""
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_teacher = crud.get_teacher_by_email(db, email=teacher.email)
+    if db_teacher:
+        raise HTTPException(status_code=400, detail="A teacher with this email already exists.")
+    
+    # Note: Unlike admins, we are not generating a password for teachers yet.
+    return crud.create_teacher(db=db, teacher=teacher)
+
+@app.delete("/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
+def delete_a_teacher(
+    teacher_id: int, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Deletes a teacher. Only accessible by a supreme-admin."""
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+        
+    db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
+    if db_teacher is None:
+        raise HTTPException(status_code=404, detail="Teacher not found.")
+    
+    # In the future, you might want to add logic here to re-assign students
+    # before deleting a teacher.
+    
+    crud.delete_teacher(db=db, teacher_id=teacher_id)
+    return db_teacher@app.get("/admin/teachers/", response_model=list[schemas.Teacher])
+def read_teachers(
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Retrieves a list of all teachers. Accessible by any admin."""
+    teachers = crud.get_teachers(db, skip=skip, limit=limit)
+    return teachers
+
+@app.post("/admin/teachers/", response_model=schemas.Teacher, status_code=201)
+def create_new_teacher(
+    teacher: schemas.TeacherCreate, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Creates a new teacher. Only accessible by a supreme-admin."""
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_teacher = crud.get_teacher_by_email(db, email=teacher.email)
+    if db_teacher:
+        raise HTTPException(status_code=400, detail="A teacher with this email already exists.")
+    
+    # Note: Unlike admins, we are not generating a password for teachers yet.
+    return crud.create_teacher(db=db, teacher=teacher)
+
+@app.delete("/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
+def delete_a_teacher(
+    teacher_id: int, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Deletes a teacher. Only accessible by a supreme-admin."""
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+        
+    db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
+    if db_teacher is None:
+        raise HTTPException(status_code=404, detail="Teacher not found.")
+    
+    # In the future, you might want to add logic here to re-assign students
+    # before deleting a teacher.
+    
+    crud.delete_teacher(db=db, teacher_id=teacher_id)
+    return db_teacher@app.get("/admin/teachers/", response_model=list[schemas.Teacher])
+def read_teachers(
+    skip: int = 0, limit: int = 100, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Retrieves a list of all teachers. Accessible by any admin."""
+    teachers = crud.get_teachers(db, skip=skip, limit=limit)
+    return teachers
+
+@app.post("/admin/teachers/", response_model=schemas.Teacher, status_code=201)
+def create_new_teacher(
+    teacher: schemas.TeacherCreate,
+    background_tasks: BackgroundTasks, # Add BackgroundTasks
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Creates a new teacher, generates a random password, and emails credentials."""
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_teacher = crud.get_teacher_by_email(db, email=teacher.email)
+    if db_teacher:
+        raise HTTPException(status_code=400, detail="A teacher with this email already exists.")
+    
+    # Generate a secure random password
+    alphabet = string.ascii_letters + string.digits
+    temp_password = ''.join(secrets.choice(alphabet) for i in range(10)) # 10-character password
+
+    # Create teacher in the database
+    new_teacher = crud.create_teacher(db=db, teacher=teacher, password=temp_password)
+
+    # Email the credentials to the new teacher
+    background_tasks.add_task(
+        email_sender.send_teacher_credentials_email,
+        teacher_data=schemas.Teacher.from_orm(new_teacher).model_dump(),
+        temp_password=temp_password
+    )
+    
+    return new_teacher
+
+@app.delete("/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
+def delete_a_teacher(
+    teacher_id: int, db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Deletes a teacher. Only accessible by a supreme-admin."""
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+        
+    db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
+    if db_teacher is None:
+        raise HTTPException(status_code=404, detail="Teacher not found.")
+    
+    # In the future, you might want to add logic here to re-assign students
+    # before deleting a teacher.
+    
+    crud.delete_teacher(db=db, teacher_id=teacher_id)
+    return db_teacher

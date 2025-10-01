@@ -50,3 +50,17 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="admin") # e.g., 'admin' or 'supreme-admin'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Teacher(Base):
+    """SQLAlchemy model for the 'teachers' table."""
+    __tablename__ = "teachers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
+    phone_number = Column(String)
+    whatsapp_number = Column(String, nullable=True)
+    shift = Column(String)  # e.g., 'Morning', 'Afternoon', 'Evening'
+    hashed_password = Column(String, nullable=True) # Making it nullable for now
+    role = Column(String, default="teacher") 
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -65,3 +65,37 @@ def delete_user(db: Session, user_id: int):
         db.delete(db_user)
         db.commit()
     return db_user
+
+# --- Teacher CRUD Functions ---
+
+def get_teacher(db: Session, teacher_id: int):
+    """Queries for a single teacher by their ID."""
+    return db.query(models.Teacher).filter(models.Teacher.id == teacher_id).first()
+
+def get_teacher_by_email(db: Session, email: str):
+    """Queries for a single teacher by their email."""
+    return db.query(models.Teacher).filter(models.Teacher.email == email).first()
+
+def get_teachers(db: Session, skip: int = 0, limit: int = 100):
+    """Retrieves all teacher records."""
+    return db.query(models.Teacher).offset(skip).limit(limit).all()
+
+def create_teacher(db: Session, teacher: schemas.TeacherCreate, password: str):
+    """Creates a new teacher record in the database with a hashed password."""
+    hashed_password = get_password_hash(password)
+    db_teacher = models.Teacher(
+        **teacher.model_dump(),
+        hashed_password=hashed_password
+    )
+    db.add(db_teacher)
+    db.commit()
+    db.refresh(db_teacher)
+    return db_teacher
+
+def delete_teacher(db: Session, teacher_id: int):
+    """Deletes a teacher from the database by their ID."""
+    db_teacher = db.query(models.Teacher).filter(models.Teacher.id == teacher_id).first()
+    if db_teacher:
+        db.delete(db_teacher)
+        db.commit()
+    return db_teacher

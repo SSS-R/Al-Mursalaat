@@ -121,3 +121,39 @@ def send_admin_credentials_email(admin_data: dict, temp_password: str):
         print(f"Admin credentials email sent to {admin_email}. Status code: {response.status_code}")
     except Exception as e:
         print(f"Error sending admin credentials email: {e}")
+
+def send_teacher_credentials_email(teacher_data: dict, temp_password: str):
+    """Sends a welcome email to a new teacher with their temporary password."""
+    if not SENDGRID_API_KEY:
+        print("ERROR: SENDGRID_API_KEY not found. Cannot send email.")
+        return
+
+    teacher_email = teacher_data.get('email')
+    teacher_name = teacher_data.get('name', 'Teacher')
+
+    html_content = f"""
+    <h3>Assalamu Alaikum, {teacher_name}!</h3>
+    <p>Welcome to the Al-Mursalaat teaching team. An account has been created for your portal.</p>
+    <p>Your login credentials are:</p>
+    <ul>
+        <li><strong>Username:</strong> {teacher_email}</li>
+        <li><strong>Temporary Password:</strong> {temp_password}</li>
+    </ul>
+    <p>Please keep these safe. You will be able to access your teacher dashboard soon.</p>
+    <br>
+    <p>Sincerely,</p>
+    <p>The Al-Mursalaat Team</p>
+    """
+
+    message = Mail(
+        from_email=FROM_EMAIL,
+        to_emails=teacher_email,
+        subject='Your New Teacher Account for Al-Mursalaat',
+        html_content=html_content
+    )
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"Teacher credentials email sent to {teacher_email}. Status code: {response.status_code}")
+    except Exception as e:
+        print(f"Error sending teacher credentials email: {e}")
