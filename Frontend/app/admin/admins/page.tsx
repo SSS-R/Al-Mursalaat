@@ -10,7 +10,7 @@ interface AdminUser {
     id: number; name: string; email: string; role: string; phone_number: string;
 }
 
-// --- Add Admin Modal Component ---
+// --- Add Admin Modal Component (Unchanged) ---
 function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (data: any) => Promise<void>; }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -29,7 +29,7 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
             email,
             phone_number: phone,
             whatsapp_number: isWhatsappDifferent ? whatsapp : phone,
-            role: 'admin', // All manually created users are 'admin' by default
+            role: 'admin',
         };
         try {
             await onSave(adminData);
@@ -93,9 +93,9 @@ export default function AdminManagementPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const router = useRouter();
 
     const fetchAdmins = async () => {
+        setIsLoading(true);
         try {
             const response = await fetch('http://localhost:8000/admin/users/', { credentials: 'include' });
             if (!response.ok) throw new Error('Failed to fetch admins.');
@@ -125,13 +125,34 @@ export default function AdminManagementPage() {
             throw new Error(errorData.detail || 'Failed to create admin.');
         }
 
-        // Success
-        onClose();
-        fetchAdmins(); // Re-fetch the list of admins to show the new one
-    };
-    
-    const onClose = () => {
         setIsModalOpen(false);
+        fetchAdmins(); // Re-fetch the list to show the new admin
+    };
+
+    // --- NEW: Function to handle deleting an admin ---
+    const handleDelete = async (userId: number) => {
+        // Ask for confirmation before deleting
+        if (!window.confirm('Are you sure you want to delete this admin? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8000/admin/users/${userId}`, {
+                method: 'DELETE',
+                credentials: 'include', // Send cookie for authentication
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || 'Failed to delete admin.');
+            }
+
+            // If successful, remove the admin from the list in the UI
+            alert('Admin deleted successfully.');
+            setAdmins(currentAdmins => currentAdmins.filter(admin => admin.id !== userId));
+        } catch (err: any) {
+            alert(`Error: ${err.message}`);
+        }
     };
 
     if (isLoading) return <div className="p-10">Loading admins...</div>;
@@ -150,23 +171,35 @@ export default function AdminManagementPage() {
                 </button>
             </div>
 
-            {/* Admin List Table (same as before) */}
             <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    {/* ... (table head) ... */}
+                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                        <tr>
+                            <th scope="col" className="px-6 py-3">Name</th>
+                            <th scope="col" className="px-6 py-3">Email</th>
+                            <th scope="col" className="px-6 py-3">Role</th>
+                            <th scope="col" className="px-6 py-3">Phone</th>
+                            <th scope="col" className="px-6 py-3">Action</th>
+                        </tr>
+                    </thead>
                     <tbody>
                         {admins.map((admin) => (
-                            <tr key={admin.id} className="border-b hover:bg-gray-50">
-                                <td className="px-6 py-4 font-medium">{admin.name}</td>
+                            <tr key={admin.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
+                                    {admin.name}
+                                </td>
                                 <td className="px-6 py-4">{admin.email}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'}`}>
                                         {admin.role}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">{admin.phone_number}</td>
                                 <td className="px-6 py-4">
-                                    <button className="font-medium text-red-600 hover:underline"><Trash2 className="w-4 h-4" /></button>
+                                    {/* --- NEW: Connect the delete button --- */}
+                                    <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 dark:text-red-500 hover:underline">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -174,7 +207,7 @@ export default function AdminManagementPage() {
                 </table>
             </div>
 
-            <AddAdminModal isOpen={isModalOpen} onClose={onClose} onSave={handleSaveAdmin} />
+            <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
         </div>
     );
 }
