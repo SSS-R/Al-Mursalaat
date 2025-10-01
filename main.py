@@ -398,3 +398,31 @@ def delete_a_teacher(
     
     crud.delete_teacher(db=db, teacher_id=teacher_id)
     return db_teacher
+
+@app.get("/admin/dashboard-stats/")
+def get_dashboard_stats(
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Calculates and returns key statistics for the admin dashboard."""
+    total_students = db.query(models.Application).count()
+    total_teachers = db.query(models.Teacher).count()
+    
+    # Counts students who are approved but don't have a teacher_id
+    unassigned_students = db.query(models.Application).filter(
+        models.Application.teacher_id == None,
+        models.Application.status == 'Approved' 
+    ).count()
+
+    # You can add more stats here in the future
+    # For example, counting pending applications
+    pending_applications = db.query(models.Application).filter(
+        models.Application.status == 'Pending'
+    ).count()
+
+    return {
+        "total_students": total_students,
+        "total_teachers": total_teachers,
+        "unassigned_students": unassigned_students,
+        "pending_applications": pending_applications,
+    }

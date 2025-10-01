@@ -27,7 +27,7 @@ class ApplicationBase(BaseModel):
     previous_experience: Optional[str] = None
     learning_goals: Optional[str] = None
     parent_name: str
-    relationship: str
+    relationship_with_student: str
     gender: str
     whatsapp_number: Optional[str] = None # This field is optional
 
