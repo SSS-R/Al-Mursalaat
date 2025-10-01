@@ -116,8 +116,20 @@ async def get_current_admin(request: Request, db: Session = Depends(get_db)):
 
 # --- API Endpoints ---
 
-# --- 2. ADD THE NEW ADMIN-ONLY ENDPOINT ---
-# This goes below the get_db() function and before your existing endpoints.
+# ---  THE NEW ADMIN-ONLY ENDPOINT ---
+@app.get("/admin/users/", response_model=list[schemas.User])
+def read_users(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin) # Protects the route
+):
+    """
+    An endpoint to retrieve a list of all admin users.
+    TODO: In the future, we can make this accessible only to 'supreme-admin'.
+    """
+    users = crud.get_users(db, skip=skip, limit=limit)
+    return users
 
 @app.post("/admin/add-student/", response_model=schemas.Application, status_code=201)
 def add_student_by_admin(
