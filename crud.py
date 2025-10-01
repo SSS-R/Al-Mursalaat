@@ -1,10 +1,28 @@
 # crud.py
-
+from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 import models
 import schemas
 
 # CRUD (Create, Read, Update, Delete) functions interact directly with the database.
+
+pwd_context= CryptContext(schemes=["bcrypt"], deprecated= "auto")
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+def create_user(db: Session, user: schemas.UserCreate, password: str):
+    """Hashes the password and creates a new user in the database."""
+    hashed_password = get_password_hash(password)
+    db_user = models.User(
+        **user.model_dump(), 
+        hashed_password=hashed_password
+    )
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 
 def get_application_by_email(db: Session, email: str):
     """

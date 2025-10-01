@@ -10,6 +10,8 @@ from fastapi_limiter.depends import RateLimiter
 import redis.asyncio as redis
 import jwt
 from jwt.exceptions import InvalidTokenError
+import secrets
+import string
 
 import crud
 import models
@@ -153,6 +155,42 @@ def add_student_by_admin(
     # because this is a manual admin action. This can be added if needed.
     
     return new_student
+
+
+@app.post("/admin/create-admin/", response_model=schemas.User, status_code=201)
+def create_admin_user(
+    user: schemas.UserCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin) # Protects the route
+):
+    """
+    An endpoint for a supreme-admin to create a new admin user.
+    Generates a random password and emails it to the new user.
+    """
+    # Optional: Add a stricter check to ensure only supreme-admin can create users
+    if current_admin.get("role") != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+
+    db_user = crud.get_user_by_email(db, email=user.email)
+    if db_user:
+        raise HTTPException(status_code=400, detail="An admin with this email already exists.")
+
+    # Generate a secure random password
+    alphabet = string.ascii_letters + string.digits + string.punctuation
+    temp_password = ''.join(secrets.choice(alphabet) for i in range(12)) # 12-character password
+
+    # Create user in the database
+    new_user = crud.create_user(db=db, user=user, password=temp_password)
+
+    # Email the credentials to the new admin in the background
+    background_tasks.add_task(
+        email_sender.send_admin_credentials_email,
+        admin_data=schemas.User.from_orm(new_user).model_dump(),
+        temp_password=temp_password
+    )
+    
+    return new_user
 
 @app.get("/")
 def read_root():
