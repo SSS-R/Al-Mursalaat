@@ -27,3 +27,11 @@ def create_application(db: Session, application: schemas.ApplicationCreate):
     db.commit()
     db.refresh(db_application) # Refresh to get the new ID and created_at from the DB
     return db_application
+
+def get_user_by_email(db: Session, email: str):
+    """Queries the database for a user with a specific email address."""
+    return db.query(models.User).filter(models.User.email == email).first()
+
+def get_users(db: Session, skip: int = 0, limit: int = 100):
+    """Retrieves all user records from the database with pagination."""
+    return db.query(models.User).offset(skip).limit(limit).all()
