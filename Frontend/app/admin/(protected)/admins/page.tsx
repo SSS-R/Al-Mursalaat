@@ -1,22 +1,27 @@
-// File: Frontend/app/admin/admins/page.tsx
+// File: Frontend/app/admin/(protected)/admins/page.tsx
 "use client";
 
 import { useState, useEffect, FormEvent } from 'react';
 import { UserPlus, Trash2, X } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 // --- Types ---
 interface AdminUser {
-    id: number; name: string; email: string; role: string; phone_number: string;
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    phone_number: string;
+    gender: string;
 }
 
-// --- Add Admin Modal Component (Unchanged) ---
+// --- Add Admin Modal Component ---
 function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (data: any) => Promise<void>; }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [isWhatsappDifferent, setIsWhatsappDifferent] = useState(false);
     const [whatsapp, setWhatsapp] = useState('');
+    const [gender, setGender] = useState(''); // New state for gender
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -27,6 +32,7 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
         const adminData = {
             name,
             email,
+            gender, // Add gender to the data object
             phone_number: phone,
             whatsapp_number: isWhatsappDifferent ? whatsapp : phone,
             role: 'admin',
@@ -59,6 +65,15 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium">Email Address *</label>
                             <input type="email" name="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/>
+                        </div>
+                        {/* New Gender Field */}
+                        <div>
+                            <label htmlFor="gender" className="block text-sm font-medium">Gender *</label>
+                            <select name="gender" id="gender" value={gender} onChange={(e) => setGender(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
                         </div>
                         <div>
                             <label htmlFor="phone" className="block text-sm font-medium">Phone Number *</label>
@@ -126,28 +141,22 @@ export default function AdminManagementPage() {
         }
 
         setIsModalOpen(false);
-        fetchAdmins(); // Re-fetch the list to show the new admin
+        fetchAdmins();
     };
 
-    // --- NEW: Function to handle deleting an admin ---
     const handleDelete = async (userId: number) => {
-        // Ask for confirmation before deleting
         if (!window.confirm('Are you sure you want to delete this admin? This action cannot be undone.')) {
             return;
         }
-
         try {
             const response = await fetch(`http://localhost:8000/admin/users/${userId}`, {
                 method: 'DELETE',
-                credentials: 'include', // Send cookie for authentication
+                credentials: 'include',
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.detail || 'Failed to delete admin.');
             }
-
-            // If successful, remove the admin from the list in the UI
             alert('Admin deleted successfully.');
             setAdmins(currentAdmins => currentAdmins.filter(admin => admin.id !== userId));
         } catch (err: any) {
@@ -172,11 +181,12 @@ export default function AdminManagementPage() {
             </div>
 
             <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <table className="w-full text-sm text-left">
+                    <thead className="text-xs uppercase bg-gray-50">
                         <tr>
                             <th scope="col" className="px-6 py-3">Name</th>
                             <th scope="col" className="px-6 py-3">Email</th>
+                            <th scope="col" className="px-6 py-3">Gender</th>
                             <th scope="col" className="px-6 py-3">Role</th>
                             <th scope="col" className="px-6 py-3">Phone</th>
                             <th scope="col" className="px-6 py-3">Action</th>
@@ -184,20 +194,18 @@ export default function AdminManagementPage() {
                     </thead>
                     <tbody>
                         {admins.map((admin) => (
-                            <tr key={admin.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                                <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                                    {admin.name}
-                                </td>
+                            <tr key={admin.id} className="border-b hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium">{admin.name}</td>
                                 <td className="px-6 py-4">{admin.email}</td>
+                                <td className="px-6 py-4">{admin.gender}</td>
                                 <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'}`}>
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
                                         {admin.role}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4">{admin.phone_number}</td>
                                 <td className="px-6 py-4">
-                                    {/* --- NEW: Connect the delete button --- */}
-                                    <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 dark:text-red-500 hover:underline">
+                                    <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 hover:underline">
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </td>

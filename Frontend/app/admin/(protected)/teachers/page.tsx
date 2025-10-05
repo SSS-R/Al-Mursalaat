@@ -1,4 +1,4 @@
-// File: Frontend/app/admin/teachers/page.tsx
+// File: Frontend/app/admin/(protected)/teachers/page.tsx
 "use client";
 
 import { useState, useEffect, FormEvent } from 'react';
@@ -7,19 +7,26 @@ import { useRouter } from 'next/navigation';
 
 // --- Types ---
 interface Teacher {
-    id: number; name: string; email: string; shift: string; phone_number: string;
+    id: number;
+    name: string;
+    email: string;
+    shift: string;
+    phone_number: string;
+    gender: string;
 }
 type User = {
-    email: string; role: 'supreme-admin' | 'admin';
+    email: string;
+    role: 'supreme-admin' | 'admin';
 };
 
-// --- Add Teacher Modal Component (Unchanged) ---
+// --- Add Teacher Modal Component ---
 function AddTeacherModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: () => void; onSave: (data: any) => Promise<void>; }) {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [isWhatsappDifferent, setIsWhatsappDifferent] = useState(false);
     const [whatsapp, setWhatsapp] = useState('');
+    const [gender, setGender] = useState('');
     const [shift, setShift] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -29,7 +36,7 @@ function AddTeacherModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose
         setIsLoading(true);
         setError(null);
         const teacherData = {
-            name, email, shift,
+            name, email, gender, shift,
             phone_number: phone,
             whatsapp_number: isWhatsappDifferent ? whatsapp : phone,
         };
@@ -61,6 +68,14 @@ function AddTeacherModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium">Email Address *</label>
                             <input type="email" name="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/>
+                        </div>
+                         <div>
+                            <label htmlFor="gender" className="block text-sm font-medium">Gender *</label>
+                            <select name="gender" id="gender" value={gender} onChange={(e) => setGender(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
                         </div>
                         <div>
                             <label htmlFor="phone" className="block text-sm font-medium">Phone Number *</label>
@@ -97,6 +112,7 @@ function AddTeacherModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose
         </div>
     );
 }
+
 
 // --- Main Page Component ---
 export default function TeachersPage() {
@@ -147,12 +163,10 @@ export default function TeachersPage() {
             credentials: 'include',
             body: JSON.stringify(teacherData),
         });
-
         if (!response.ok) {
             const errorData = await response.json();
             throw new Error(errorData.detail || 'Failed to create teacher.');
         }
-        
         setIsModalOpen(false);
         await fetchTeachers();
     };
@@ -161,18 +175,15 @@ export default function TeachersPage() {
         if (!window.confirm('Are you sure you want to delete this teacher?')) {
             return;
         }
-
         try {
             const response = await fetch(`http://localhost:8000/admin/teachers/${teacherId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
-
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.detail || 'Failed to delete teacher.');
             }
-
             alert('Teacher deleted successfully.');
             setTeachers(currentTeachers => currentTeachers.filter(t => t.id !== teacherId));
         } catch (err: any) {
@@ -187,25 +198,29 @@ export default function TeachersPage() {
         <div className="p-6 sm:p-10">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold">Teacher Management</h1>
-                    <p className="mt-2 text-gray-500">Add, view, and manage teachers.</p>
+                    <h1 className="text-3xl font-bold text-gray-800 dark:text-white">Teacher Management</h1>
+                    <p className="mt-2 text-gray-500 dark:text-gray-400">Add, view, and manage teachers.</p>
                 </div>
                 {user?.role === 'supreme-admin' && (
-                    <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90">
+                    <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90">
                         <UserPlus className="w-5 h-5 mr-2" />
                         Add New Teacher
                     </button>
                 )}
             </div>
             
-            {/* ... (sorting controls remain the same) ... */}
+            {/* Placeholder Sorting Controls */}
+            <div className="mt-4 flex items-center space-x-4">
+                 {/* We will add functional sorting controls here later */}
+            </div>
 
             <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead className="text-xs uppercase bg-gray-50">
+                <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
                         <tr>
                             <th scope="col" className="px-6 py-3">Name</th>
                             <th scope="col" className="px-6 py-3">Email</th>
+                            <th scope="col" className="px-6 py-3">Gender</th>
                             <th scope="col" className="px-6 py-3">Shift</th>
                             <th scope="col" className="px-6 py-3">Phone</th>
                             <th scope="col" className="px-6 py-3">Students</th>
@@ -214,15 +229,16 @@ export default function TeachersPage() {
                     </thead>
                     <tbody>
                         {teachers.map((teacher) => (
-                            <tr key={teacher.id} className="border-b hover:bg-gray-50">
+                            <tr key={teacher.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                                 <td className="px-6 py-4 font-medium">{teacher.name}</td>
                                 <td className="px-6 py-4">{teacher.email}</td>
+                                <td className="px-6 py-4">{teacher.gender}</td>
                                 <td className="px-6 py-4">{teacher.shift}</td>
                                 <td className="px-6 py-4">{teacher.phone_number}</td>
                                 <td className="px-6 py-4">0</td>
                                 <td className="px-6 py-4">
                                     {user?.role === 'supreme-admin' && (
-                                        <button onClick={() => handleDeleteTeacher(teacher.id)} className="font-medium text-red-600 hover:underline">
+                                        <button onClick={() => handleDeleteTeacher(teacher.id)} className="font-medium text-red-600 dark:text-red-500 hover:underline">
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     )}
@@ -231,9 +247,11 @@ export default function TeachersPage() {
                         ))}
                     </tbody>
                 </table>
-                    {teachers.length === 0 && (
-                        <div className="text-center p-8">No teachers have been added yet.</div>
-                    )}
+                 {teachers.length === 0 && (
+                    <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+                        No teachers have been added yet.
+                    </div>
+                )}
             </div>
             <AddTeacherModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveTeacher} />
         </div>

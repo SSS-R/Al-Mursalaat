@@ -53,6 +53,7 @@ class User(Base):
     phone_number = Column(String)
     whatsapp_number = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
+    gender = Column(String)
     role = Column(String, default="admin") # e.g., 'admin' or 'supreme-admin'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -65,6 +66,7 @@ class Teacher(Base):
     email = Column(String, unique=True, index=True)
     phone_number = Column(String)
     whatsapp_number = Column(String, nullable=True)
+    gender = Column(String)
     shift = Column(String)  # e.g., 'Morning', 'Afternoon', 'Evening'
     hashed_password = Column(String, nullable=True) # Making it nullable for now
     role = Column(String, default="teacher") 

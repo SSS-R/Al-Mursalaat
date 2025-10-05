@@ -59,6 +59,7 @@ class UserBase(BaseModel):
     name: str
     email: EmailStr
     phone_number: str
+    gender: str
     whatsapp_number: Optional[str] = None
 
 class UserCreate(UserBase):
@@ -82,6 +83,7 @@ class TeacherBase(BaseModel):
     phone_number: str
     whatsapp_number: Optional[str] = None
     shift: str
+    gender: str
 
 class TeacherCreate(TeacherBase):
     pass
