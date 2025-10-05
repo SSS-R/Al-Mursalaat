@@ -92,3 +92,7 @@ class Teacher(TeacherBase):
 
     class Config:
         from_attributes = True
+
+class StudentAssign(BaseModel):
+    teacher_id: int
+    shift: str

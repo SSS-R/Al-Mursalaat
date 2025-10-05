@@ -20,6 +20,7 @@ class Application(Base):
     country = Column(String)
     preferred_course = Column(String)
     age = Column(Integer)
+    status = Column(String, default='Pending')
     previous_experience = Column(String, nullable=True)
     learning_goals = Column(String, nullable=True)
     parent_name = Column(String)
@@ -31,6 +32,7 @@ class Application(Base):
     # prevents mismatches with the Pydantic schemas.
     gender = Column(String)
     whatsapp_number = Column(String, nullable=True)
+    shift = Column(String, nullable=True)
     teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
     teacher = relationship("Teacher", back_populates="students")
 

@@ -9,6 +9,11 @@ import schemas
 pwd_context= CryptContext(schemes=["bcrypt"], deprecated= "auto")
 
 def get_password_hash(password):
+    password_bytes = password.encode('utf-8')
+    # Truncate character by character to avoid breaking multi-byte characters
+    while len(password_bytes) > 72:
+        password = password[:-1]
+        password_bytes = password.encode('utf-8')
     return pwd_context.hash(password)
 
 def create_user(db: Session, user: schemas.UserCreate, password: str):
@@ -99,3 +104,22 @@ def delete_teacher(db: Session, teacher_id: int):
         db.delete(db_teacher)
         db.commit()
     return db_teacher
+
+def assign_teacher_and_shift(db: Session, student_id: int, teacher_id: int, shift: str):
+    """Assigns a teacher and shift to a student and updates their status to 'Approved'."""
+    db_student = db.query(models.Application).filter(models.Application.id == student_id).first()
+    if db_student:
+        db_student.teacher_id = teacher_id
+        db_student.shift = shift
+        db_student.status = "Approved"
+        db.commit()
+        db.refresh(db_student)
+    return db_student
+
+def get_application_by_id(db: Session, application_id: int):
+    """Queries for a single application by its ID."""
+    return db.query(models.Application).filter(models.Application.id == application_id).first()
+
+def get_applications(db: Session, skip: int = 0, limit: int = 100):
+    """Retrieves all application records from the database."""
+    return db.query(models.Application).offset(skip).limit(limit).all()
