@@ -1,59 +1,27 @@
 # schemas.py
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
-# Pydantic models define the shape of the data for your API.
-# They handle validation, serialization, and documentation automatically.
+# --- Base Schemas (No dependencies on other schemas) ---
 
 class ApplicationBase(BaseModel):
-    """
-    Base schema with fields common to both creating and reading applications.
-    This matches the fields in your frontend form.
-    """
     first_name: str
     last_name: str
-    email: EmailStr # Pydantic validates that this is a valid email format
+    email: EmailStr
     phone_number: str
     country: str
     preferred_course: str
-    
-    # --- IMPROVEMENT: Added Validation ---
-    # The age is still required, but now we also ensure it's a positive number.
-    # `gt=0` means "greater than 0".
-    age: int = Field(..., gt=0, description="The applicant's age must be a positive number.")
-
+    age: int = Field(..., gt=0)
     previous_experience: Optional[str] = None
     learning_goals: Optional[str] = None
     parent_name: str
     relationship_with_student: str
     gender: str
-    whatsapp_number: Optional[str] = None # This field is optional
-
-
-class ApplicationCreate(ApplicationBase):
-    """
-    Schema used for creating a new application.
-    It receives data from the frontend POST request.
-    """
-    pass # Inherits all fields from ApplicationBase
-
-class Application(ApplicationBase):
-    """
-    Schema used for reading/returning an application from the API.
-    It includes database-generated fields like 'id' and 'created_at'.
-    """
-    id: int
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
-    class Config:
-        # This tells Pydantic to read data from ORM models (SQLAlchemy objects)
-        # and not just from dictionaries. It's crucial for converting DB objects
-        # to JSON responses.
-        from_attributes = True
-
+    whatsapp_number: Optional[str] = None
+    shift: Optional[str] = None
+    status: Optional[str] = "Pending"
 
 class UserBase(BaseModel):
     name: str
@@ -61,21 +29,6 @@ class UserBase(BaseModel):
     phone_number: str
     gender: str
     whatsapp_number: Optional[str] = None
-
-class UserCreate(UserBase):
-    """Schema for data received from the frontend to create a new admin."""
-    role: str = "admin"
-
-class User(UserBase):
-    """Schema for returning user data from the API (omits password)."""
-    id: int
-    role: str
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
-
-# --- Teacher Schemas ---
 
 class TeacherBase(BaseModel):
     name: str
@@ -85,16 +38,59 @@ class TeacherBase(BaseModel):
     shift: str
     gender: str
 
+# --- Schemas for Creating New Objects ---
+
+class ApplicationCreate(ApplicationBase):
+    pass
+
+class UserCreate(UserBase):
+    role: str = "admin"
+
 class TeacherCreate(TeacherBase):
     pass
+
+# --- Schemas for API Responses (with relationships) ---
+
+class User(UserBase):
+    id: int
+    role: str
+    created_at: datetime
+    class Config:
+        from_attributes = True
 
 class Teacher(TeacherBase):
     id: int
     created_at: datetime
-
     class Config:
         from_attributes = True
+
+class Application(ApplicationBase):
+    id: int
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    # This tells Pydantic to expect a nested Teacher object.
+    # The string 'Teacher' is a "forward reference" to prevent errors.
+    teacher: Optional['Teacher'] = None
+    class Config:
+        from_attributes = True
+
+class TeacherWithStudents(Teacher):
+    # This tells Pydantic to expect a nested list of Application objects.
+    students: List['Application'] = []
+    class Config:
+        from_attributes = True
+
+# --- Resolve Forward References ---
+# This is a crucial step that allows the schemas to refer to each other.
+Application.model_rebuild()
+TeacherWithStudents.model_rebuild()
+
+# --- Schemas for Specific Actions ---
 
 class StudentAssign(BaseModel):
     teacher_id: int
     shift: str
+    
+class PasswordUpdate(BaseModel):
+    current_password: str
+    new_password: str

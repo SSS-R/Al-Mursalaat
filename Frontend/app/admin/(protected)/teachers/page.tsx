@@ -96,8 +96,8 @@ function AddTeacherModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose
                             <select name="shift" id="shift" value={shift} onChange={(e) => setShift(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
                                 <option value="">Select a shift</option>
                                 <option value="Morning">Morning</option>
-                                <option value="Afternoon">Afternoon</option>
                                 <option value="Evening">Evening</option>
+                                <option value="Night">Afternoon</option>
                             </select>
                         </div>
                     </div>

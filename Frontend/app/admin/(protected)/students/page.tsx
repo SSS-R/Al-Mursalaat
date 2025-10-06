@@ -3,10 +3,25 @@
 
 import { useState, useMemo, useEffect, Suspense, FormEvent } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { UserPlus, X, PlusCircle } from 'lucide-react';
+import { UserPlus, X, PlusCircle, Trash2 } from 'lucide-react';
 
-// --- Types ---
-interface Student { id: number; name: string; email: string; course: string; status: string; teacher: { name: string } | null; teacher_id: number | null; classTime: string | null; country: string; age: number; phone_number: string; parent_name: string; shift: string | null; gender: string; }
+// --- Types (Corrected to match backend) ---
+interface Student { 
+    id: number; 
+    first_name: string;
+    last_name: string;
+    email: string; 
+    preferred_course: string; 
+    status: string; 
+    teacher: { name: string } | null; 
+    teacher_id: number | null; 
+    country: string; 
+    age: number; 
+    phone_number: string; 
+    parent_name: string; 
+    shift: string | null; 
+    gender: string; 
+}
 interface Teacher { id: number; name: string; }
 
 // --- Add Student Modal ---
@@ -55,25 +70,25 @@ function AddStudentModal({ isOpen, onClose, onSave, courses }: { isOpen: boolean
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <div className="flex items-center justify-between p-4 border-b dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Add New Student</h3>
-                        <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-white"><X size={20} /></button>
+                        <h3 className="text-lg font-semibold">Add New Student</h3>
+                        <button type="button" onClick={onClose}><X size={20} /></button>
                     </div>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div><label htmlFor="firstName" className="block text-sm font-medium">First Name *</label><input type="text" name="firstName" id="firstName" value={formData.firstName} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="lastName" className="block text-sm font-medium">Last Name *</label><input type="text" name="lastName" id="lastName" value={formData.lastName} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="gender" className="block text-sm font-medium">Gender *</label><select name="gender" id="gender" value={formData.gender} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"><option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
-                        <div><label htmlFor="age" className="block text-sm font-medium">Age *</label><input type="number" name="age" id="age" value={formData.age} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="parentName" className="block text-sm font-medium">Parent's Name *</label><input type="text" name="parentName" id="parentName" placeholder="If self, type 'self'" value={formData.parentName} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="relationship_with_student" className="block text-sm font-medium">Relationship *</label><input type="text" name="relationship_with_student" id="relationship_with_student" placeholder="If self, type 'self'" value={formData.relationship_with_student} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="email" className="block text-sm font-medium">Email Address *</label><input type="email" name="email" id="email" value={formData.email} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="phone" className="block text-sm font-medium">Phone Number *</label><input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="whatsapp" className="block text-sm font-medium">WhatsApp Number</label><input type="tel" name="whatsapp" id="whatsapp" placeholder="Optional, if different" value={formData.whatsapp} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div><label htmlFor="country" className="block text-sm font-medium">Country *</label><input type="text" name="country" id="country" value={formData.country} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/></div>
-                        <div className="md:col-span-2"><label htmlFor="course" className="block text-sm font-medium">Preferred Course *</label><select name="course" id="course" value={formData.course} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"><option value="">Select a course</option>{courses.map(course => (<option key={course} value={course}>{course}</option>))}</select></div>
+                        <div><label htmlFor="firstName" className="block text-sm font-medium">First Name *</label><input type="text" name="firstName" id="firstName" value={formData.firstName} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="lastName" className="block text-sm font-medium">Last Name *</label><input type="text" name="lastName" id="lastName" value={formData.lastName} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="gender" className="block text-sm font-medium">Gender *</label><select name="gender" id="gender" value={formData.gender} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"><option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                        <div><label htmlFor="age" className="block text-sm font-medium">Age *</label><input type="number" name="age" id="age" value={formData.age} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="parentName" className="block text-sm font-medium">Parent's Name *</label><input type="text" name="parentName" id="parentName" placeholder="If self, type 'self'" value={formData.parentName} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="relationship_with_student" className="block text-sm font-medium">Relationship *</label><input type="text" name="relationship_with_student" id="relationship_with_student" placeholder="If self, type 'self'" value={formData.relationship_with_student} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="email" className="block text-sm font-medium">Email Address *</label><input type="email" name="email" id="email" value={formData.email} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="phone" className="block text-sm font-medium">Phone Number *</label><input type="tel" name="phone" id="phone" value={formData.phone} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="whatsapp" className="block text-sm font-medium">WhatsApp Number</label><input type="tel" name="whatsapp" id="whatsapp" placeholder="Optional, if different" value={formData.whatsapp} onChange={handleChange} className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div><label htmlFor="country" className="block text-sm font-medium">Country *</label><input type="text" name="country" id="country" value={formData.country} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"/></div>
+                        <div className="md:col-span-2"><label htmlFor="course" className="block text-sm font-medium">Preferred Course *</label><select name="course" id="course" value={formData.course} onChange={handleChange} required className="mt-1 w-full p-2 border rounded-md"><option value="">Select a course</option>{courses.map(course => (<option key={course} value={course}>{course}</option>))}</select></div>
                     </div>
-                    <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700 sticky bottom-0">
-                        <button type="button" onClick={onClose} className="px-4 py-2 mr-2 text-sm text-gray-700 bg-white border rounded-md hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600">Cancel</button>
-                        <button type="submit" disabled={isLoading} className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">{isLoading ? 'Saving...' : 'Save Student'}</button>
+                    <div className="flex justify-end p-4 bg-gray-50 border-t sticky bottom-0">
+                        <button type="button" onClick={onClose} className="px-4 py-2 mr-2 text-sm border rounded-md">Cancel</button>
+                        <button type="submit" disabled={isLoading} className="px-4 py-2 text-sm text-white bg-primary rounded-md disabled:opacity-50">{isLoading ? 'Saving...' : 'Save Student'}</button>
                     </div>
                 </form>
             </div>
@@ -108,11 +123,11 @@ function ManageStudentModal({ student, teachers, isOpen, onClose, onSave }: { st
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-lg w-full">
                 <form onSubmit={handleSubmit}>
-                    <div className="flex items-center justify-between p-4 border-b"><h3 className="text-lg font-semibold">Manage Student: {student.name}</h3><button type="button" onClick={onClose}><X size={20} /></button></div>
+                    <div className="flex items-center justify-between p-4 border-b"><h3 className="text-lg font-semibold">Manage Student: {`${student.first_name} ${student.last_name}`}</h3><button type="button" onClick={onClose}><X size={20} /></button></div>
                     <div className="p-6 space-y-4">
                         {error && <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>}
                         <p><strong>Status:</strong> {student.status}</p>
-                        <p><strong>Course:</strong> {student.course}</p>
+                        <p><strong>Course:</strong> {student.preferred_course}</p>
                         <div><label htmlFor="teacher" className="block text-sm font-medium">Assign Teacher *</label><select id="teacher" value={teacherId} onChange={(e) => setTeacherId(e.target.value)} className="mt-1 w-full p-2 border rounded-md"><option value="">Select a teacher</option>{teachers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
                         <div><label htmlFor="shift" className="block text-sm font-medium">Assign Shift *</label><select id="shift" value={shift} onChange={(e) => setShift(e.target.value)} className="mt-1 w-full p-2 border rounded-md"><option value="">Select a shift</option><option value="Morning">Morning</option><option value="Afternoon">Afternoon</option><option value="Evening">Evening</option></select></div>
                     </div>
@@ -166,7 +181,7 @@ function StudentsPage() {
         }
     };
 
-    useEffect(() => { fetchData(); }, [router]);
+    useEffect(() => { fetchData(); }, []);
 
     const handleSaveNewStudent = async (studentData: any) => {
         const response = await fetch('http://localhost:8000/admin/add-student/', {
@@ -175,7 +190,10 @@ function StudentsPage() {
             credentials: 'include',
             body: JSON.stringify(studentData),
         });
-        if (!response.ok) { const errorData = await response.json(); throw new Error(errorData.detail || 'Failed to add student.'); }
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to add student.');
+        }
         setIsAddModalOpen(false);
         await fetchData();
     };
@@ -207,7 +225,7 @@ function StudentsPage() {
         }
         if (view === 'unassigned' && countryFilter !== 'all') { currentStudents = currentStudents.filter(s => s.country === countryFilter); }
         if (view === 'all' && statusFilter !== 'all') { currentStudents = currentStudents.filter(s => s.status === statusFilter); }
-        if (courseFilter !== 'all') { currentStudents = currentStudents.filter(s => s.course === courseFilter); }
+        if (courseFilter !== 'all') { currentStudents = currentStudents.filter(s => s.preferred_course === courseFilter); }
         if (genderFilter !== 'all') { currentStudents = currentStudents.filter(s => s.gender === genderFilter); }
 
         return currentStudents;
@@ -215,12 +233,7 @@ function StudentsPage() {
 
     const viewTitles: { [key: string]: string } = { all: 'All Students', unassigned: 'Unassigned Students' };
     const countries = [...new Set(students.map(s => s.country).filter(Boolean))];
-    const courses = [
-    'Quran Reading (Nazra)',
-    'Quran Memorization',
-    'Quran Learning (Kayda)',
-    // Add any other courses you offer here
-];
+    const courses = [ 'Quran Reading (Nazra)', 'Quran Memorization', 'Quran Learning (Kayda)', 'Advanced Tajweed' ];
 
     if (isLoading) return <div className="p-10">Loading students...</div>;
     if (error) return <div className="p-10 text-red-500">Error: {error}</div>;
@@ -250,8 +263,8 @@ function StudentsPage() {
                     <tbody>
                         {filteredStudents.map((student) => (
                             <tr key={student.id} className="border-b hover:bg-gray-50">
-                                <td className="px-6 py-4 font-medium whitespace-nowrap">{student.name}<p className="text-xs text-gray-500">{student.email}</p></td>
-                                <td className="px-6 py-4">{student.age}</td><td className="px-6 py-4">{student.gender}</td><td className="px-6 py-4">{student.parent_name}</td><td className="px-6 py-4">{student.phone_number}</td><td className="px-6 py-4">{student.country}</td><td className="px-6 py-4">{student.course}</td><td className="px-6 py-4">{student.shift || 'N/A'}</td><td className="px-6 py-4">{student.teacher?.name || 'N/A'}</td>
+                                <td className="px-6 py-4 font-medium whitespace-nowrap">{`${student.first_name} ${student.last_name}`}<p className="text-xs text-gray-500">{student.email}</p></td>
+                                <td className="px-6 py-4">{student.age}</td><td className="px-6 py-4">{student.gender}</td><td className="px-6 py-4">{student.parent_name}</td><td className="px-6 py-4">{student.phone_number}</td><td className="px-6 py-4">{student.country}</td><td className="px-6 py-4">{student.preferred_course}</td><td className="px-6 py-4">{student.shift || 'N/A'}</td><td className="px-6 py-4">{student.teacher?.name || 'N/A'}</td>
                                 <td className="px-6 py-4"><span className={`px-2 py-1 text-xs font-medium rounded-full ${student.status === 'Approved' ? 'bg-green-100 text-green-800' : student.status === 'Finished' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'}`}>{student.status}</span></td>
                                 <td className="px-6 py-4"><button onClick={() => setSelectedStudent(student)} className="font-medium text-primary hover:underline">Manage</button></td>
                             </tr>

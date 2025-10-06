@@ -1,6 +1,6 @@
 # crud.py
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 import models
 import schemas
 
@@ -15,6 +15,24 @@ def get_password_hash(password):
         password = password[:-1]
         password_bytes = password.encode('utf-8')
     return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verifies a plain text password against a hashed password."""
+    # Truncate the plain password the same way before verification
+    password_bytes = plain_password.encode('utf-8')
+    while len(password_bytes) > 72:
+        plain_password = plain_password[:-1]
+        password_bytes = plain_password.encode('utf-8')
+    return pwd_context.verify(plain_password, hashed_password)
+
+def update_user_password(db: Session, user_id: int, new_password: str):
+    """Finds a user by ID and updates their password."""
+    db_user = get_user(db, user_id=user_id)
+    if db_user:
+        new_hashed_password = get_password_hash(new_password)
+        db_user.hashed_password = new_hashed_password
+        db.commit()
+    return db_user
 
 def create_user(db: Session, user: schemas.UserCreate, password: str):
     """Hashes the password and creates a new user in the database."""
@@ -45,7 +63,7 @@ def create_application(db: Session, application: schemas.ApplicationCreate):
     # dictionary (e.g., 'gender') now correctly match the attributes of the
     # `models.Application` class.
     application_data = application.model_dump()
-    db_application = models.Application(**application_data)
+    db_application = models.Application(**application_data, status="Pending")
     db.add(db_application)
     db.commit()
     db.refresh(db_application) # Refresh to get the new ID and created_at from the DB
@@ -122,4 +140,4 @@ def get_application_by_id(db: Session, application_id: int):
 
 def get_applications(db: Session, skip: int = 0, limit: int = 100):
     """Retrieves all application records from the database."""
-    return db.query(models.Application).offset(skip).limit(limit).all()
+    return db.query(models.Application).options(joinedload(models.Application.teacher)).offset(skip).limit(limit).all()

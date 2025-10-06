@@ -126,9 +126,34 @@ def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin
     crud.delete_user(db=db, user_id=user_id)
     return user_to_delete
 
+@app.post("/admin/users/me/change-password")
+def change_current_user_password(
+    password_data: schemas.PasswordUpdate,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Allows a logged-in user (admin or teacher) to change their own password."""
+    # 1. Get the current user's email from the security token
+    user_email = current_admin.get("email")
+    
+    # 2. Fetch the user's full record from the database
+    db_user = crud.get_user_by_email(db, email=user_email)
+    if not db_user:
+        # This should theoretically never happen if the token is valid
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    # 3. Verify that the "current_password" they provided is correct
+    if not crud.verify_password(password_data.current_password, db_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect current password.")
+
+    # 4. If correct, update the database with the new password
+    crud.update_user_password(db, user_id=db_user.id, new_password=password_data.new_password)
+    
+    return {"message": "Password updated successfully."}
+
 # --- Teacher Endpoints ---
 
-@app.get("/admin/teachers/", response_model=list[schemas.Teacher])
+@app.get("/admin/teachers/", response_model=list[schemas.TeacherWithStudents])
 def read_teachers(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     teachers = crud.get_teachers(db, skip=skip, limit=limit)
     return teachers
@@ -161,6 +186,8 @@ def delete_a_teacher(teacher_id: int, db: Session = Depends(get_db), current_adm
 @app.get("/admin/students/", response_model=list[schemas.Application])
 def read_students(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     students = crud.get_applications(db, skip=skip, limit=limit)
+    #for student in students:
+        #print(f"DEBUG: Student ID {student.id}, Teacher Object: {student.teacher}")
     return students
 
 @app.post("/admin/add-student/", response_model=schemas.Application, status_code=201)
@@ -196,3 +223,4 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_admin: dict = Dep
         "unassigned_students": unassigned_students,
         "pending_applications": pending_applications,
     }
+
