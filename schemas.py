@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
-from datetime import datetime
+from datetime import datetime, date, time
 
 # --- Base Schemas (No dependencies on other schemas) ---
 
@@ -37,6 +37,45 @@ class TeacherBase(BaseModel):
     whatsapp_number: Optional[str] = None
     shift: str
     gender: str
+
+# --- Schedule Schemas ---
+
+class ScheduleBase(BaseModel):
+    day_of_week: str
+    start_time: time
+    end_time: time
+    student_id: int
+    teacher_id: int
+    zoom_link: Optional[str] = None
+
+class ScheduleCreate(ScheduleBase):
+    pass
+
+class Schedule(ScheduleBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+
+# --- Attendance Schemas ---
+
+class AttendanceBase(BaseModel):
+    class_date: date
+    status: str
+    student_id: int
+    teacher_id: int
+    notes: Optional[str] = None
+
+class AttendanceCreate(AttendanceBase):
+    pass
+
+class Attendance(AttendanceBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 
 # --- Schemas for Creating New Objects ---
 
@@ -77,6 +116,7 @@ class Application(ApplicationBase):
 class TeacherWithStudents(Teacher):
     # This tells Pydantic to expect a nested list of Application objects.
     students: List['Application'] = []
+    schedules: List['Schedule']
     class Config:
         from_attributes = True
 
@@ -84,7 +124,7 @@ class TeacherWithStudents(Teacher):
 # This is a crucial step that allows the schemas to refer to each other.
 Application.model_rebuild()
 TeacherWithStudents.model_rebuild()
-
+Schedule.model_rebuild()
 # --- Schemas for Specific Actions ---
 
 class StudentAssign(BaseModel):
@@ -94,3 +134,4 @@ class StudentAssign(BaseModel):
 class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str
+

@@ -1,17 +1,43 @@
-// File: Frontend/app/admin/(protected)/profile/page.tsx
+// File: Frontend/app/n_admin/profile/page.tsx
 "use client";
 
-import { useState, FormEvent } from 'react';
-import { KeyRound, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect, FormEvent } from 'react';
+import { KeyRound, CheckCircle, AlertCircle, UserCircle } from 'lucide-react';
+
+// Define a type for the logged-in user's data
+type User = {
+    name: string;
+    email: string;
+    role: string;
+};
 
 export default function ProfilePage() {
+    // State for the form
     const [currentPassword, setCurrentPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-
+    
+    // State for user data and notifications
+    const [user, setUser] = useState<User | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Fetch the logged-in user's data when the page loads
+    useEffect(() => {
+        const fetchUser = async () => {
+            try {
+                const response = await fetch('/api/auth/me', { credentials: 'include' });
+                if (response.ok) {
+                    const userData = await response.json();
+                    setUser(userData);
+                }
+            } catch (error) {
+                console.error("Failed to fetch user data:", error);
+            }
+        };
+        fetchUser();
+    }, []);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -22,7 +48,6 @@ export default function ProfilePage() {
             setError("New passwords do not match.");
             return;
         }
-
         if (newPassword.length < 8) {
             setError("New password must be at least 8 characters long.");
             return;
@@ -34,10 +59,7 @@ export default function ProfilePage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({
-                    current_password: currentPassword,
-                    new_password: newPassword,
-                }),
+                body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
             });
 
             if (!response.ok) {
@@ -46,7 +68,6 @@ export default function ProfilePage() {
             }
 
             setSuccess('Password updated successfully!');
-            // Clear the form
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
@@ -61,6 +82,18 @@ export default function ProfilePage() {
         <div className="p-6 sm:p-10">
             <h1 className="text-3xl font-bold text-gray-800 dark:text-white">My Profile</h1>
             
+            {/* User Info Display */}
+            {user && (
+                <div className="mt-8 flex items-center space-x-4 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md max-w-lg">
+                    <UserCircle className="w-12 h-12 text-gray-400" />
+                    <div>
+                        <p className="text-lg font-semibold text-gray-800 dark:text-white">{user.name}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">{user.email}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Change Password Form */}
             <div className="mt-8 max-w-lg">
                 <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg">
                     <form onSubmit={handleSubmit}>

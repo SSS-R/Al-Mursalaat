@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Users, UserCircle, LogOut } from 'lucide-react';
+import { Home, UserCircle, LogOut } from 'lucide-react';
 
 type User = {
     email: string;
@@ -22,14 +22,14 @@ export default function NormalAdminLayout({ children }: { children: React.ReactN
           try {
             const response = await fetch('/api/auth/me');
             if (!response.ok) {
-              router.push('/admin/login');
+              router.push('/login');
               return;
             }
             const userData: User = await response.json();
             setUser(userData);
           } catch (error) {
             console.error("Failed to fetch user:", error);
-            router.push('/admin/login');
+            router.push('/login');
           } finally {
             setIsLoading(false);
           }
@@ -37,8 +37,13 @@ export default function NormalAdminLayout({ children }: { children: React.ReactN
         fetchUser();
     }, [router]);
 
+    const handleLogout = async () => {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        router.push('/login');
+    };
+
     if (isLoading) {
-        return <div className="flex h-screen items-center justify-center">Loading...</div>;
+        return <div className="flex h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">Loading...</div>;
     }
 
     const isActive = (path: string) => pathname === path;
@@ -50,7 +55,6 @@ export default function NormalAdminLayout({ children }: { children: React.ReactN
                     <h2 className="text-2xl font-bold text-primary">Admin Portal</h2>
                 </div>
                 <nav className="mt-6 px-4">
-                    {/* We will build this page later */}
                     <Link href="/n_admin/dashboard" className={`flex items-center px-4 py-3 rounded-lg ${isActive('/n_admin/dashboard') ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white' : 'text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white'}`}>
                         <Home className="w-5 h-5" />
                         <span className="mx-4 font-medium">Dashboard</span>
@@ -62,7 +66,7 @@ export default function NormalAdminLayout({ children }: { children: React.ReactN
                     </Link>
                 </nav>
                 <div className="absolute bottom-0 w-64 p-6 border-t dark:border-gray-700">
-                   <button className="flex items-center w-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white -mx-2 px-2 py-2 rounded-lg">
+                   <button onClick={handleLogout} className="flex items-center w-full text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white -mx-2 px-2 py-2 rounded-lg">
                         <LogOut className="w-5 h-5" />
                         <span className="mx-4 font-medium">Logout</span>
                     </button>

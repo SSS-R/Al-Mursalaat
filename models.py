@@ -1,6 +1,6 @@
 # models.py
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Date, Time
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from database import Base
@@ -35,10 +35,12 @@ class Application(Base):
     shift = Column(String, nullable=True)
     teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
     teacher = relationship("Teacher", back_populates="students")
-
+    attendances = relationship("Attendance", back_populates="student")
     # Timestamps are handled automatically by the database
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    attendances = relationship("Attendance", back_populates="student")
+    schedule = relationship("Schedule", back_populates="student", uselist=False)
 
 class User(Base):
     """
@@ -72,3 +74,36 @@ class Teacher(Base):
     role = Column(String, default="teacher") 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     students = relationship("Application", back_populates="teacher")
+    attendances = relationship("Attendance", back_populates="teacher")
+    schedules = relationship("Schedule", back_populates="teacher")
+
+class Attendance(Base):
+    __tablename__ = "attendances"
+
+    id = Column(Integer, primary_key=True, index=True)
+    class_date = Column(Date, nullable=False)
+    status = Column(String, nullable=False)  # e.g., 'Present', 'Absent', 'Late'
+    notes = Column(String, nullable=True)
+
+    student_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
+    teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=False)
+
+    student = relationship("Application", back_populates="attendances")
+    teacher = relationship("Teacher", back_populates="attendances")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Schedule(Base):
+    __tablename__ = "schedules"
+
+    id = Column(Integer, primary_key=True, index=True)
+    day_of_week = Column(String, nullable=False) # e.g., 'Sunday', 'Monday'
+    start_time = Column(Time, nullable=False)
+    end_time = Column(Time, nullable=False)
+    zoom_link = Column(String, nullable=True)
+
+    student_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
+    teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=False)
+
+    student = relationship("Application", back_populates="schedule")
+    teacher = relationship("Teacher", back_populates="schedules")

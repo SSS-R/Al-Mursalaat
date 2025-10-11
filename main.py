@@ -1,5 +1,5 @@
 # main.py
-
+from datetime import datetime, date, timedelta
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,13 +12,14 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 import secrets
 import string
-
+from typing import List
 import crud
 import models
 import schemas
 from database import SessionLocal, engine
 import sheets
 import email_sender
+from fastapi.security import OAuth2PasswordRequestForm
 
 load_dotenv()
 
@@ -70,9 +71,17 @@ async def get_current_admin(request: Request, db: Session = Depends(get_db)):
         role: str = payload.get("role")
         if email is None or role is None:
             raise HTTPException(status_code=401, detail="Invalid token: Missing payload.")
-        if role not in ["admin", "supreme-admin", "teacher"]: # Added 'teacher' for future use
+        
+        # Fetch the full user/teacher object from the database
+        user = crud.get_user_or_teacher_by_email(db, email=email)
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found.")
+        
+        # Check for correct role (this is a redundant but safe check)
+        if user.role not in ["admin", "supreme-admin", "teacher"]:
             raise HTTPException(status_code=403, detail="Forbidden: Insufficient permissions.")
-        return payload
+
+        return user # Return the full database object
     except InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token: Could not validate credentials.")
 
@@ -94,6 +103,47 @@ def submit_application(application: schemas.ApplicationCreate, background_tasks:
     background_tasks.add_task(email_sender.send_admin_notification, application_data=application_dict)
     return new_application
 
+@app.post("/login")
+def login_for_access_token(
+    db: Session = Depends(get_db),
+    form_data: OAuth2PasswordRequestForm = Depends()
+):
+    # --- NEW DEBUG PRINTS ---
+    print("--- LOGIN ATTEMPT ---")
+    print(f"Form Data Received: username='{form_data.username}'")
+    print(f".env Supreme Admin: email='{os.getenv('SUPREME_ADMIN_EMAIL')}'")
+    # -------------------------
+    
+    # --- NEW: Check for hardcoded supreme admin first ---
+    SUPREME_ADMIN_EMAIL = os.getenv("SUPREME_ADMIN_EMAIL")
+    SUPREME_ADMIN_PASSWORD = os.getenv("SUPREME_ADMIN_PASSWORD")
+
+    if form_data.username == SUPREME_ADMIN_EMAIL and form_data.password == SUPREME_ADMIN_PASSWORD:
+        user_role = "supreme-admin"
+        user_email = form_data.username
+    else:
+        # --- OLD: If not supreme admin, check the database ---
+        user = crud.authenticate_user(db, email=form_data.username, password=form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=401,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        user_role = user.role
+        user_email = user.email
+
+    # Create the JWT token
+    access_token_expires = timedelta(minutes=60)
+    expire = datetime.utcnow() + access_token_expires
+    payload = {
+        "email": user_email,
+        "role": user_role,
+        "exp": expire
+    }
+    access_token = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
+    
+    return {"access_token": access_token, "token_type": "bearer"}
 # --- Admin/User Endpoints ---
 
 @app.get("/admin/users/", response_model=list[schemas.User])
@@ -133,29 +183,42 @@ def change_current_user_password(
     current_admin: dict = Depends(get_current_admin)
 ):
     """Allows a logged-in user (admin or teacher) to change their own password."""
-    # 1. Get the current user's email from the security token
     user_email = current_admin.get("email")
     
-    # 2. Fetch the user's full record from the database
-    db_user = crud.get_user_by_email(db, email=user_email)
+    # Use the generic function to find the user in either table
+    db_user = crud.get_user_or_teacher_by_email(db, email=user_email)
     if not db_user:
-        # This should theoretically never happen if the token is valid
         raise HTTPException(status_code=404, detail="User not found.")
 
-    # 3. Verify that the "current_password" they provided is correct
     if not crud.verify_password(password_data.current_password, db_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect current password.")
 
-    # 4. If correct, update the database with the new password
-    crud.update_user_password(db, user_id=db_user.id, new_password=password_data.new_password)
+    # Use the generic function to update the password
+    crud.update_password(db, user_obj=db_user, new_password=password_data.new_password)
     
     return {"message": "Password updated successfully."}
 
 # --- Teacher Endpoints ---
 
 @app.get("/admin/teachers/", response_model=list[schemas.TeacherWithStudents])
-def read_teachers(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
-    teachers = crud.get_teachers(db, skip=skip, limit=limit)
+def read_teachers(
+    skip: int = 0, 
+    limit: int = 100, 
+    db: Session = Depends(get_db),
+    # The type hint here is now a database model, not a dictionary
+    current_admin: models.User = Depends(get_current_admin)
+):
+    """
+    Retrieves a list of teachers, filtered by the logged-in admin's gender.
+    Supreme admins get all teachers.
+    """
+    if current_admin.role == "supreme-admin":
+        # Supreme admin sees all teachers
+        teachers = crud.get_teachers(db, skip=skip, limit=limit)
+    else:
+        # Normal admins only see teachers of the same gender
+        teachers = crud.get_teachers_by_gender(db, gender=current_admin.gender, skip=skip, limit=limit)
+    
     return teachers
 
 @app.post("/admin/teachers/", response_model=schemas.Teacher, status_code=201)
@@ -224,3 +287,62 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_admin: dict = Dep
         "pending_applications": pending_applications,
     }
 
+# --- Attendance Endpoints ---
+
+@app.get("/admin/attendance/", response_model=List[schemas.Attendance])
+def read_attendance_records(
+    teacher_id: int,
+    class_date: date,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """
+    Retrieves attendance records for a given teacher and date.
+    e.g., /admin/attendance/?teacher_id=1&class_date=2025-10-06
+    """
+    attendance_records = crud.get_attendance_for_teacher_by_date(
+        db=db, teacher_id=teacher_id, class_date=class_date
+    )
+    return attendance_records
+
+@app.post("/admin/attendance/", response_model=schemas.Attendance, status_code=201)
+def mark_student_attendance(
+    attendance: schemas.AttendanceCreate,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Creates a new attendance record for a student."""
+    # Check if attendance for this student on this date has already been marked
+    existing_record = crud.get_attendance_record(
+        db=db, student_id=attendance.student_id, class_date=attendance.class_date
+    )
+    if existing_record:
+        raise HTTPException(
+            status_code=400, 
+            detail="Attendance has already been marked for this student on this date."
+        )
+    
+    return crud.create_attendance_record(db=db, attendance=attendance)
+
+# --- Schedule Endpoints ---
+@app.post("/admin/schedules/", response_model=schemas.Schedule, status_code=201)
+def create_new_schedule(
+    schedule: schemas.ScheduleCreate,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin)
+):
+    """Creates a new class schedule for a teacher and student."""
+    # Optional: Add validation to ensure the admin is allowed to schedule this teacher
+    
+    # Check if student and teacher exist
+    db_student = crud.get_application_by_id(db, application_id=schedule.student_id)
+    if not db_student:
+        raise HTTPException(status_code=404, detail="Student not found.")
+    
+    db_teacher = crud.get_teacher(db, teacher_id=schedule.teacher_id)
+    if not db_teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found.")
+
+    # In the future, we can add a check here to prevent scheduling conflicts
+
+    return crud.create_schedule(db=db, schedule=schedule)

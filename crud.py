@@ -3,6 +3,7 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session, joinedload
 import models
 import schemas
+from datetime import datetime, date
 
 # CRUD (Create, Read, Update, Delete) functions interact directly with the database.
 
@@ -25,14 +26,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         password_bytes = plain_password.encode('utf-8')
     return pwd_context.verify(plain_password, hashed_password)
 
-def update_user_password(db: Session, user_id: int, new_password: str):
-    """Finds a user by ID and updates their password."""
-    db_user = get_user(db, user_id=user_id)
-    if db_user:
-        new_hashed_password = get_password_hash(new_password)
-        db_user.hashed_password = new_hashed_password
-        db.commit()
-    return db_user
+def update_password(db: Session, user_obj, new_password: str):
+    """Updates the password for a given user or teacher object."""
+    new_hashed_password = get_password_hash(new_password)
+    user_obj.hashed_password = new_hashed_password
+    db.commit()
+    return user_obj
 
 def create_user(db: Session, user: schemas.UserCreate, password: str):
     """Hashes the password and creates a new user in the database."""
@@ -141,3 +140,57 @@ def get_application_by_id(db: Session, application_id: int):
 def get_applications(db: Session, skip: int = 0, limit: int = 100):
     """Retrieves all application records from the database."""
     return db.query(models.Application).options(joinedload(models.Application.teacher)).offset(skip).limit(limit).all()
+
+def get_teachers_by_gender(db: Session, gender: str, skip: int = 0, limit: int = 100):
+    """Retrieves all teacher records of a specific gender."""
+    return db.query(models.Teacher).filter(models.Teacher.gender == gender).offset(skip).limit(limit).all()
+
+# --- Attendance CRUD Functions ---
+
+def get_attendance_for_teacher_by_date(db: Session, teacher_id: int, class_date: date):
+    """Retrieves all attendance records for a specific teacher on a specific date."""
+    return db.query(models.Attendance).filter(
+        models.Attendance.teacher_id == teacher_id,
+        models.Attendance.class_date == class_date
+    ).all()
+
+def get_attendance_record(db: Session, student_id: int, class_date: date):
+    """Checks if an attendance record already exists for a student on a specific date."""
+    return db.query(models.Attendance).filter(
+        models.Attendance.student_id == student_id,
+        models.Attendance.class_date == class_date
+    ).first()
+
+def create_attendance_record(db: Session, attendance: schemas.AttendanceCreate):
+    """Creates a new attendance record."""
+    db_attendance = models.Attendance(**attendance.model_dump())
+    db.add(db_attendance)
+    db.commit()
+    db.refresh(db_attendance)
+    return db_attendance
+
+
+def authenticate_user(db: Session, email: str, password: str):
+    """Finds a user/teacher by email and verifies their password."""
+    user = get_user_or_teacher_by_email(db, email=email) # Use the new generic function
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user
+
+def get_user_or_teacher_by_email(db: Session, email: str):
+    """Checks both the users and teachers table for a matching email."""
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user:
+        return user
+    teacher = db.query(models.Teacher).filter(models.Teacher.email == email).first()
+    return teacher
+
+def create_schedule(db: Session, schedule: schemas.ScheduleCreate):
+    """Creates a new schedule record in the database."""
+    db_schedule = models.Schedule(**schedule.model_dump())
+    db.add(db_schedule)
+    db.commit()
+    db.refresh(db_schedule)
+    return db_schedule
