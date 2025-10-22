@@ -61,14 +61,16 @@ export default function AdminLoginPage() {
                 // Save the token in a cookie
                 setCookie('sessionToken', token, 7); // Save for 7 days
 
-                // Redirect based on the user's role
+// Redirect based on the user's role
                 if (userRole === 'supreme-admin') {
                     router.push('/admin/dashboard');
                 } else if (userRole === 'admin') {
                     router.push('/n_admin/dashboard');
+                } else if (userRole === 'teacher') {
+                    router.push('/teacher/dashboard'); // <-- This is the fix
                 } else {
-                    // We can add the teacher portal redirect here later
-                    router.push('/admin/login'); 
+                    // Fallback in case of an unknown role
+                    setError('Unknown user role. Cannot redirect.');
                 }
             } else {
                 const errorData = await response.json();
