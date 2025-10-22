@@ -35,6 +35,54 @@ app = FastAPI(
     description="API for handling student applications.",
     version="1.0.0"
 )
+@app.on_event("startup")
+def create_supreme_admin_on_startup():
+    """Checks for and creates the supreme admin on server startup."""
+    
+    print("--- Checking for Supreme Admin on startup ---")
+    
+    # 1. Get admin details from .env
+    ADMIN_EMAIL = os.getenv("SUPREME_ADMIN_EMAIL")
+    ADMIN_PASSWORD = os.getenv("SUPREME_ADMIN_PASSWORD")
+    
+    if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+        print("WARNING: SUPREME_ADMIN_EMAIL or SUPREME_ADMIN_PASSWORD not set in .env. Skipping admin creation.")
+        return
+
+    # 2. Get a database session
+    db = SessionLocal()
+    
+    try:
+        # 3. Check if user already exists IN THE 'users' TABLE
+        # We use get_user_by_email, not get_user_or_teacher_by_email
+        admin = crud.get_user_by_email(db, email=ADMIN_EMAIL)
+        
+        if not admin:
+            # 4. If not, create the user
+            print(f"Supreme Admin '{ADMIN_EMAIL}' not found. Creating...")
+            
+            # Create the user object based on schemas.UserCreate
+            admin_schema = schemas.UserCreate(
+                email=ADMIN_EMAIL,
+                name="Supreme Admin",         # Default value
+                phone_number="0000000000",    # Default value
+                gender="N/A",                # Default value
+                whatsapp_number="0000000000", # Default value
+                role="supreme-admin"         # CRITICAL: Set role
+            )
+            
+            # Use your existing crud function to create the user
+            crud.create_user(db=db, user=admin_schema, password=ADMIN_PASSWORD)
+            print(f"Supreme Admin '{ADMIN_EMAIL}' created successfully.")
+        
+        else:
+            print(f"Supreme Admin '{ADMIN_EMAIL}' already exists.")
+            
+    except Exception as e:
+        print(f"--- ERROR checking/creating supreme admin: {e} ---")
+    finally:
+        # 5. Always close the session
+        db.close()
 
 @app.on_event("startup")
 async def startup():
@@ -108,37 +156,27 @@ def login_for_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    # --- NEW DEBUG PRINTS ---
     print("--- LOGIN ATTEMPT ---")
     print(f"Form Data Received: username='{form_data.username}'")
-    print(f".env Supreme Admin: email='{os.getenv('SUPREME_ADMIN_EMAIL')}'")
-    # -------------------------
     
-    # --- NEW: Check for hardcoded supreme admin first ---
-    SUPREME_ADMIN_EMAIL = os.getenv("SUPREME_ADMIN_EMAIL")
-    SUPREME_ADMIN_PASSWORD = os.getenv("SUPREME_ADMIN_PASSWORD")
-
-    if form_data.username == SUPREME_ADMIN_EMAIL and form_data.password == SUPREME_ADMIN_PASSWORD:
-        user_role = "supreme-admin"
-        user_email = form_data.username
-    else:
-        # --- OLD: If not supreme admin, check the database ---
-        user = crud.authenticate_user(db, email=form_data.username, password=form_data.password)
-        if not user:
-            raise HTTPException(
-                status_code=401,
-                detail="Incorrect email or password",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-        user_role = user.role
-        user_email = user.email
+    # --- SIMPLIFIED LOGIC ---
+    # Authenticate against the database for ALL users, including supreme-admin.
+    # The startup event ensures the supreme-admin exists in the database.
+    user = crud.authenticate_user(db, email=form_data.username, password=form_data.password)
+    
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     # Create the JWT token
     access_token_expires = timedelta(minutes=60)
     expire = datetime.utcnow() + access_token_expires
     payload = {
-        "email": user_email,
-        "role": user_role,
+        "email": user.email,
+        "role": user.role,
         "exp": expire
     }
     access_token = jwt.encode(payload, JWT_SECRET, algorithm=ALGORITHM)
@@ -153,25 +191,25 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), c
 
 @app.post("/admin/create-admin/", response_model=schemas.User, status_code=201)
 def create_admin_user(user: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
-    if current_admin.get("role") != "supreme-admin":
+    if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="An admin with this email already exists.")
-    alphabet = string.ascii_letters + string.digits + string.punctuation
-    temp_password = ''.join(secrets.choice(alphabet) for i in range(12))
+    alphabet = string.ascii_letters + string.digits
+    temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
     new_user = crud.create_user(db=db, user=user, password=temp_password)
     background_tasks.add_task(email_sender.send_admin_credentials_email, admin_data=schemas.User.from_orm(new_user).model_dump(), temp_password=temp_password)
     return new_user
 
 @app.delete("/admin/users/{user_id}", response_model=schemas.User)
 def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
-    if current_admin.get("role") != "supreme-admin":
+    if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
     user_to_delete = crud.get_user(db, user_id=user_id)
     if user_to_delete is None:
         raise HTTPException(status_code=404, detail="User not found.")
-    if user_to_delete.email == current_admin.get("email"):
+    if user_to_delete.email == current_admin.email:
         raise HTTPException(status_code=400, detail="Action not allowed: You cannot delete your own account.")
     crud.delete_user(db=db, user_id=user_id)
     return user_to_delete
@@ -183,7 +221,7 @@ def change_current_user_password(
     current_admin: dict = Depends(get_current_admin)
 ):
     """Allows a logged-in user (admin or teacher) to change their own password."""
-    user_email = current_admin.get("email")
+    user_email = current_admin.email
     
     # Use the generic function to find the user in either table
     db_user = crud.get_user_or_teacher_by_email(db, email=user_email)
@@ -223,7 +261,7 @@ def read_teachers(
 
 @app.post("/admin/teachers/", response_model=schemas.Teacher, status_code=201)
 def create_new_teacher(teacher: schemas.TeacherCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
-    if current_admin.get("role") != "supreme-admin":
+    if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
     db_teacher = crud.get_teacher_by_email(db, email=teacher.email)
     if db_teacher:
@@ -236,7 +274,7 @@ def create_new_teacher(teacher: schemas.TeacherCreate, background_tasks: Backgro
 
 @app.delete("/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
 def delete_a_teacher(teacher_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
-    if current_admin.get("role") != "supreme-admin":
+    if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
     db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
     if db_teacher is None:

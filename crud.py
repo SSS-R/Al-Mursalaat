@@ -62,7 +62,7 @@ def create_application(db: Session, application: schemas.ApplicationCreate):
     # dictionary (e.g., 'gender') now correctly match the attributes of the
     # `models.Application` class.
     application_data = application.model_dump()
-    db_application = models.Application(**application_data, status="Pending")
+    db_application = models.Application(**application_data)
     db.add(db_application)
     db.commit()
     db.refresh(db_application) # Refresh to get the new ID and created_at from the DB
