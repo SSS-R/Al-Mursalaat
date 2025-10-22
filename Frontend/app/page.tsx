@@ -669,7 +669,7 @@ export default function HomePage() {
         </div>
       </section>
       {/* Teachers Section */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white" id="about">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 animate-fade-in-up">
             <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
@@ -756,7 +756,6 @@ export default function HomePage() {
           <div
             className="mt-16 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 animate-fade-in-up shadow-xl"
             style={{ animationDelay: "600ms" }}
-            id="about"
           >
             <div className="text-center mb-8">
               <h3 className="text-2xl md:text-3xl font-bold text-primary mb-4">
