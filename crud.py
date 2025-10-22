@@ -184,7 +184,12 @@ def get_user_or_teacher_by_email(db: Session, email: str):
     user = db.query(models.User).filter(models.User.email == email).first()
     if user:
         return user
-    teacher = db.query(models.Teacher).filter(models.Teacher.email == email).first()
+
+    # Eagerly load students, schedules, and the student for each schedule
+    teacher = db.query(models.Teacher).filter(models.Teacher.email == email).options(
+        joinedload(models.Teacher.students),
+        joinedload(models.Teacher.schedules).joinedload(models.Schedule.student)
+    ).first()
     return teacher
 
 def create_schedule(db: Session, schedule: schemas.ScheduleCreate):

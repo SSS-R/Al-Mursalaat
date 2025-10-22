@@ -37,6 +37,8 @@ class TeacherBase(BaseModel):
     whatsapp_number: Optional[str] = None
     shift: str
     gender: str
+    profile_photo_url: Optional[str] = None
+    cv_url: Optional[str] = None
 
 # --- Schedule Schemas ---
 

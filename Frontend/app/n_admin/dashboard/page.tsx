@@ -2,13 +2,132 @@
 "use client";
 
 import { useState, useEffect, useMemo, FormEvent } from 'react';
-import { ChevronDown, PlusCircle } from 'lucide-react';
+import { ChevronDown, PlusCircle, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-// --- Types ---
-interface Student { id: number; first_name: string; last_name: string; preferred_course: string; }
-interface Schedule { id: number; day_of_week: string; start_time: string; end_time: string; student_id: number; }
-interface Teacher { id: number; name: string; email: string; shift: string; gender: string; students: Student[]; schedules: Schedule[]; }
-interface AttendanceRecord { student_id: number; status: string; }
+// --- Types (Corrected to match backend schemas) ---
+interface Student { 
+    id: number; 
+    first_name: string; 
+    last_name: string; 
+    preferred_course: string; // This matches your 'Application' schema
+}
+interface Schedule { 
+    id: number; 
+    day_of_week: string; 
+    start_time: string; 
+    end_time: string; 
+    student_id: number; 
+    zoom_link: string | null;
+}
+interface Teacher { 
+    id: number; 
+    name: string; 
+    email: string; 
+    shift: string; 
+    gender: string; 
+    students: Student[]; 
+    schedules: Schedule[]; 
+}
+interface AttendanceRecord { 
+    student_id: number; 
+    status: string; 
+}
+
+// --- Add Schedule Modal Component ---
+function AddScheduleModal({ isOpen, onClose, onSave, teacher }: { isOpen: boolean; onClose: () => void; onSave: (data: any) => Promise<void>; teacher: Teacher; }) {
+    const [studentId, setStudentId] = useState('');
+    const [dayOfWeek, setDayOfWeek] = useState('Sunday');
+    const [startTime, setStartTime] = useState('');
+    const [zoomLink, setZoomLink] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Filter out students who are already scheduled
+    const unscheduledStudents = useMemo(() => {
+        const scheduledStudentIds = new Set(teacher.schedules.map(s => s.student_id));
+        return teacher.students.filter(s => !scheduledStudentIds.has(s.id));
+    }, [teacher]);
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!studentId || !startTime) { setError('Please select a student and a start time.'); return; }
+        setIsLoading(true);
+        setError(null);
+        
+        // Automatically set end time to be 1 hour after start time
+        const [hours, minutes] = startTime.split(':').map(Number);
+        const endDate = new Date();
+        endDate.setHours(hours + 1, minutes, 0);
+        const endTime = endDate.toTimeString().substring(0, 5);
+
+        const scheduleData = {
+            student_id: parseInt(studentId),
+            teacher_id: teacher.id,
+            day_of_week: dayOfWeek,
+            start_time: startTime,
+            end_time: endTime,
+            zoom_link: zoomLink || null,
+        };
+        try {
+            await onSave(scheduleData);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-lg w-full">
+                <form onSubmit={handleSubmit}>
+                    <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                        <h3 className="text-lg font-semibold">Add Schedule for {teacher.name}</h3>
+                        <button type="button" onClick={onClose}><X size={20} /></button>
+                    </div>
+                    <div className="p-6 space-y-4">
+                        {error && <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>}
+                        <div>
+                            <label htmlFor="studentId" className="block text-sm font-medium">Student *</label>
+                            <select id="studentId" value={studentId} onChange={(e) => setStudentId(e.target.value)} required className="mt-1 w-full p-2 border rounded-md">
+                                <option value="">Select an unscheduled student</option>
+                                {unscheduledStudents.map(s => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.first_name} {s.last_name} ({s.preferred_course})
+                                    </option>
+                                ))}
+                            </select>
+                            {unscheduledStudents.length === 0 && <p className="text-xs text-gray-500 mt-1">All of this teacher's students are scheduled.</p>}
+                        </div>
+                        <div>
+                            <label htmlFor="dayOfWeek" className="block text-sm font-medium">Day of the Week *</label>
+                            <select id="dayOfWeek" value={dayOfWeek} onChange={(e) => setDayOfWeek(e.target.value)} required className="mt-1 w-full p-2 border rounded-md">
+                                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day => <option key={day} value={day}>{day}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="startTime" className="block text-sm font-medium">Class Start Time *</label>
+                            <input type="time" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} required className="mt-1 w-full p-2 border rounded-md" />
+                        </div>
+                        <div>
+                            <label htmlFor="zoomLink" className="block text-sm font-medium">Zoom Link (Optional)</label>
+                            <input type="url" id="zoomLink" value={zoomLink} onChange={(e) => setZoomLink(e.target.value)} placeholder="https://zoom.us/j/..." className="mt-1 w-full p-2 border rounded-md" />
+                        </div>
+                    </div>
+                    <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
+                        <button type="button" onClick={onClose} className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100">Cancel</button>
+                        <button type="submit" disabled={isLoading} className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">
+                            {isLoading ? 'Saving...' : 'Save Schedule'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
 
 // --- Schedule Table Component ---
 function ScheduleTable({ teacher, onAddSchedule }: { teacher: Teacher; onAddSchedule: () => void; }) {
@@ -60,7 +179,7 @@ function ScheduleTable({ teacher, onAddSchedule }: { teacher: Teacher; onAddSche
                                         </div>
                                     ))}
                                     {(!schedulesByDay[day] || schedulesByDay[day].length === 0) && (
-                                        <p className="text-xs text-gray-400 italic">No classes</p>
+                                        <p className="text-xs text-gray-400 italic p-1">No classes</p>
                                     )}
                                 </td>
                             ))}
@@ -84,21 +203,27 @@ export default function NormalAdminDashboard() {
     const [attendance, setAttendance] = useState<Record<number, string>>({});
     const [existingAttendance, setExistingAttendance] = useState<AttendanceRecord[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
+    // State for the new Add Schedule Modal
+    const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+    const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
+
+    const fetchData = async () => {
+        setIsLoading(true);
+        try {
+            const response = await fetch('http://localhost:8000/admin/teachers/', { credentials: 'include' });
+            if (!response.ok) throw new Error('Failed to fetch teachers. Please log in again.');
+            const data: Teacher[] = await response.json();
+            setTeachers(data);
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchTeachers = async () => {
-            try {
-                const response = await fetch('http://localhost:8000/admin/teachers/', { credentials: 'include' });
-                if (!response.ok) throw new Error('Failed to fetch teachers. Please log in again.');
-                const data: Teacher[] = await response.json();
-                setTeachers(data);
-            } catch (err: any) {
-                setError(err.message);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchTeachers();
+        fetchData();
     }, []);
 
     useEffect(() => {
@@ -125,7 +250,7 @@ export default function NormalAdminDashboard() {
             processedTeachers = processedTeachers.filter(t => t.shift === shiftFilter);
         }
         if (sortBy === 'Most Students') {
-            processedTeachers.sort((a, b) => (b.students?.length || 0) - (a.students?.length || 0));
+            processedTeachers = processedTeachers.sort((a, b) => (b.students?.length || 0) - (a.students?.length || 0));
         } else if (sortBy === 'Name') {
             processedTeachers.sort((a, b) => a.name.localeCompare(b.name));
         }
@@ -178,9 +303,25 @@ export default function NormalAdminDashboard() {
             setIsSubmitting(false);
         }
     };
-    
-    const handleAddScheduleClick = (teacherId: number) => {
-        alert(`Functionality to add a schedule for teacher ID ${teacherId} will be added next.`);
+
+    const handleAddScheduleClick = (teacher: Teacher) => {
+        setSelectedTeacher(teacher);
+        setIsScheduleModalOpen(true);
+    };
+
+    const handleSaveSchedule = async (scheduleData: any) => {
+        const response = await fetch('http://localhost:8000/admin/schedules/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(scheduleData),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || 'Failed to save schedule.');
+        }
+        setIsScheduleModalOpen(false);
+        await fetchData(); // Re-fetch all data to show the new schedule
     };
 
     if (isLoading) return <div className="p-10">Loading teacher data...</div>;
@@ -232,7 +373,7 @@ export default function NormalAdminDashboard() {
                            
                            {isExpanded && (
                             <>
-                                <ScheduleTable teacher={teacher} onAddSchedule={() => handleAddScheduleClick(teacher.id)} />
+                                <ScheduleTable teacher={teacher} onAddSchedule={() => handleAddScheduleClick(teacher)} />
                                 <div className="border-t dark:border-gray-700 p-4">
                                     <div className="flex items-center space-x-4 mb-4">
                                         <label htmlFor="class-date" className="font-semibold">Mark Attendance for:</label>
@@ -278,6 +419,16 @@ export default function NormalAdminDashboard() {
                     </div>
                 )}
             </div>
+
+            {/* Render the new modal */}
+            {selectedTeacher && (
+                <AddScheduleModal
+                    isOpen={isScheduleModalOpen}
+                    onClose={() => setIsScheduleModalOpen(false)}
+                    onSave={handleSaveSchedule}
+                    teacher={selectedTeacher}
+                />
+            )}
         </div>
     );
 }

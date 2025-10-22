@@ -71,7 +71,9 @@ class Teacher(Base):
     gender = Column(String)
     shift = Column(String)  # e.g., 'Morning', 'Afternoon', 'Evening'
     hashed_password = Column(String, nullable=True) # Making it nullable for now
-    role = Column(String, default="teacher") 
+    role = Column(String, default="teacher")
+    profile_photo_url = Column(String, nullable=True)
+    cv_url = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     students = relationship("Application", back_populates="teacher")
     attendances = relationship("Attendance", back_populates="teacher")

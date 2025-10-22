@@ -244,6 +244,18 @@ def delete_a_teacher(teacher_id: int, db: Session = Depends(get_db), current_adm
     crud.delete_teacher(db=db, teacher_id=teacher_id)
     return db_teacher
 
+@app.get("/teacher/me", response_model=schemas.TeacherWithStudents)
+def get_teacher_me(
+    current_user: models.Teacher = Depends(get_current_admin)
+):
+    """Gets the data for the currently logged-in teacher."""
+    if not hasattr(current_user, 'role') or current_user.role != "teacher":
+        raise HTTPException(status_code=403, detail="Forbidden: Access denied for this role.")
+    
+    # Because we updated the crud function, current_user is already
+    # the full teacher object with students and schedules pre-loaded.
+    return current_user
+
 # --- Student Endpoints ---
 
 @app.get("/admin/students/", response_model=list[schemas.Application])
