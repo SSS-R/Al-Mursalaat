@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Users,
@@ -32,6 +32,7 @@ export default function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -112,7 +113,7 @@ export default function AdminLayout({
               onClick={closeSidebar}
               className={`flex items-center px-4 py-3 rounded-lg ${
                 isActive("/admin/dashboard")
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                  ? "text-primary font-semibold"
                   : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
               }`}
             >
@@ -141,7 +142,8 @@ export default function AdminLayout({
                     href="/admin/students?view=all"
                     onClick={closeSidebar}
                     className={`block px-4 py-2 mt-1 text-sm rounded-lg ${
-                      pathname === "/admin/students"
+                      pathname === "/admin/students" &&
+                      searchParams.get("view") === "all"
                         ? "text-primary font-semibold"
                         : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white"
                     }`}
@@ -152,7 +154,8 @@ export default function AdminLayout({
                     href="/admin/students?view=unassigned"
                     onClick={closeSidebar}
                     className={`block px-4 py-2 mt-1 text-sm rounded-lg ${
-                      pathname === "/admin/students"
+                      pathname === "/admin/students" &&
+                      searchParams.get("view") === "unassigned"
                         ? "text-primary font-semibold"
                         : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white"
                     }`}
@@ -168,7 +171,7 @@ export default function AdminLayout({
               onClick={closeSidebar}
               className={`mt-2 flex items-center px-4 py-3 rounded-lg ${
                 isActive("/admin/teachers")
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                  ? "text-primary font-semibold"
                   : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
               }`}
             >
@@ -182,7 +185,7 @@ export default function AdminLayout({
                 onClick={closeSidebar}
                 className={`mt-2 flex items-center px-4 py-3 rounded-lg ${
                   isActive("/admin/admins")
-                    ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                    ? "text-primary font-semibold"
                     : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                 }`}
               >

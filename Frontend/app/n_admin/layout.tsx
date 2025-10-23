@@ -101,7 +101,7 @@ export default function NormalAdminLayout({
               onClick={closeSidebar}
               className={`flex items-center px-4 py-3 rounded-lg ${
                 isActive("/n_admin/dashboard")
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                  ? "text-primary font-semibold"
                   : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
               }`}
             >
@@ -114,7 +114,7 @@ export default function NormalAdminLayout({
               onClick={closeSidebar}
               className={`mt-2 flex items-center px-4 py-3 rounded-lg ${
                 isActive("/n_admin/profile")
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                  ? "text-primary font-semibold"
                   : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
               }`}
             >
