@@ -45,14 +45,13 @@ export default function AdminLayout({
         const userData: User = await response.json();
         setUser(userData);
       } catch (error) {
-        console.error("Failed to fetch user:", error);
         router.push("/login");
       } finally {
         setIsLoading(false);
       }
     };
     fetchUser();
-  }, [router]);
+  }, [pathname]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });

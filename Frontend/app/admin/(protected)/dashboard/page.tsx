@@ -32,34 +32,26 @@ function StatCard({ title, value, icon: Icon }: { title: string; value: number; 
 
 
 export default function AdminDashboardPage() {
-  const [user, setUser] = useState<User | null>(null);
+  // ...existing code...
+  // Session/auth check removed; now handled in layout
   const [stats, setStats] = useState<Stats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-        try {
-            const [userRes, statsRes] = await Promise.all([
-                fetch('/api/auth/me', { credentials: 'include' }),
-                fetch('http://localhost:8000/admin/dashboard-stats/', { credentials: 'include' })
-            ]);
-
-            if (!userRes.ok) throw new Error('Authentication failed.');
-            const userData = await userRes.json();
-            setUser(userData);
-            
-            if (!statsRes.ok) throw new Error('Failed to fetch stats.');
-            const statsData = await statsRes.json();
-            setStats(statsData);
-
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    fetchDashboardData();
+  const fetchDashboardData = async () => {
+    try {
+      const statsRes = await fetch('http://localhost:8000/admin/dashboard-stats/', { credentials: 'include' });
+      if (!statsRes.ok) throw new Error('Failed to fetch stats.');
+      const statsData = await statsRes.json();
+      setStats(statsData);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchDashboardData();
   }, []);
 
   if (isLoading) {
