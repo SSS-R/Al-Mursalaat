@@ -24,8 +24,8 @@ class Application(Base):
     status = Column(String, default='Pending')
     previous_experience = Column(String, nullable=True)
     learning_goals = Column(String, nullable=True)
-    parent_name = Column(String)
-    relationship_with_student = Column(String) # e.g., 'Self', 'Father', 'Mother'
+    parent_name = Column(String, nullable=True)
+    relationship_with_student = Column(String, nullable= True) # e.g., 'Self', 'Father', 'Mother'
 
     # --- FIX: Standardized Column Naming ---
     # Changed 'Gender' to 'gender' and 'Whatsapp_number' to 'whatsapp_number'.
