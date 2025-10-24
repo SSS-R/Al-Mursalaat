@@ -12,12 +12,13 @@ class ApplicationBase(BaseModel):
     email: EmailStr
     phone_number: str
     country: str
+    state: Optional[str]= None
     preferred_course: str
     age: int = Field(..., gt=0)
     previous_experience: Optional[str] = None
     learning_goals: Optional[str] = None
-    parent_name: str
-    relationship_with_student: str
+    parent_name: Optional[str] = None
+    relationship_with_student: Optional[str]=None
     gender: str
     whatsapp_number: Optional[str] = None
     shift: Optional[str] = None
@@ -55,6 +56,7 @@ class ScheduleCreate(ScheduleBase):
 
 class Schedule(ScheduleBase):
     id: int
+    student: 'Application'
     class Config:
         from_attributes = True
 

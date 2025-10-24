@@ -18,6 +18,7 @@ class Application(Base):
     email = Column(String, unique=True, index=True)
     phone_number = Column(String)
     country = Column(String)
+    state=Column(String, nullable= True)
     preferred_course = Column(String)
     age = Column(Integer)
     status = Column(String, default='Pending')
