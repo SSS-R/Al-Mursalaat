@@ -1,6 +1,8 @@
 # main.py
 from datetime import datetime, date, timedelta
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request, UploadFile, File, Form
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -12,13 +14,14 @@ import jwt
 from jwt.exceptions import InvalidTokenError
 import secrets
 import string
-from typing import List
+from typing import List, Optional
 import crud
 import models
 import schemas
 from database import SessionLocal, engine
 import sheets
 import email_sender
+import file_handler
 from fastapi.security import OAuth2PasswordRequestForm
 
 load_dotenv()
@@ -101,6 +104,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for uploaded teacher photos and CVs
+BASE_DIR = Path(__file__).parent.parent
+STATIC_DIR = BASE_DIR / "Frontend" / "public"
+app.mount("/bucket", StaticFiles(directory=str(STATIC_DIR / "bucket")), name="bucket")
 
 def get_db():
     db = SessionLocal()
@@ -260,15 +268,55 @@ def read_teachers(
     return teachers
 
 @app.post("/admin/teachers/", response_model=schemas.Teacher, status_code=201)
-def create_new_teacher(teacher: schemas.TeacherCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+async def create_new_teacher(
+    name: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    shift: str = Form(...),
+    gender: str = Form(...),
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin),
+    background_tasks: BackgroundTasks = None,
+    whatsapp_number: Optional[str] = Form(None),
+    photo: Optional[UploadFile] = File(None),
+    cv: Optional[UploadFile] = File(None)
+):
+    # Initialize background tasks if not provided
+    if background_tasks is None:
+        background_tasks = BackgroundTasks()
+    
     if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
-    db_teacher = crud.get_teacher_by_email(db, email=teacher.email)
+    
+    db_teacher = crud.get_teacher_by_email(db, email=email)
     if db_teacher:
         raise HTTPException(status_code=400, detail="A teacher with this email already exists.")
+    
+    # Handle file uploads
+    photo_url = None
+    cv_url = None
+    
+    if photo:
+        photo_url = await file_handler.save_teacher_photo(photo)
+    
+    if cv:
+        cv_url = await file_handler.save_teacher_cv(cv)
+    
+    # Create teacher data object
+    teacher_data = schemas.TeacherCreate(
+        name=name,
+        email=email,
+        phone_number=phone_number,
+        whatsapp_number=whatsapp_number,
+        shift=shift,
+        gender=gender,
+        profile_photo_url=photo_url,
+        cv_url=cv_url
+    )
+    
     alphabet = string.ascii_letters + string.digits
     temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
-    new_teacher = crud.create_teacher(db=db, teacher=teacher, password=temp_password)
+    new_teacher = crud.create_teacher(db=db, teacher=teacher_data, password=temp_password)
     background_tasks.add_task(email_sender.send_teacher_credentials_email, teacher_data=schemas.Teacher.from_orm(new_teacher).model_dump(), temp_password=temp_password)
     return new_teacher
 
@@ -279,6 +327,13 @@ def delete_a_teacher(teacher_id: int, db: Session = Depends(get_db), current_adm
     db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
     if db_teacher is None:
         raise HTTPException(status_code=404, detail="Teacher not found.")
+    
+    # Delete associated files if they exist
+    if db_teacher.profile_photo_url:
+        file_handler.delete_teacher_photo(db_teacher.profile_photo_url)
+    if db_teacher.cv_url:
+        file_handler.delete_teacher_cv(db_teacher.cv_url)
+    
     crud.delete_teacher(db=db, teacher_id=teacher_id)
     return db_teacher
 
