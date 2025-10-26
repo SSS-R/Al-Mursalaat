@@ -2,8 +2,9 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { UserPlus, Trash2, X } from "lucide-react";
+import { UserPlus, Trash2, X, FileText, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@/app/context/UserContext";
 
 // --- Types ---
 interface Teacher {
@@ -13,11 +14,48 @@ interface Teacher {
   shift: string;
   phone_number: string;
   gender: string;
+  profile_photo_url?: string;
+  cv_url?: string;
 }
 type User = {
   email: string;
   role: "supreme-admin" | "admin";
 };
+
+// --- Photo Modal Component ---
+function PhotoModal({
+  isOpen,
+  onClose,
+  photoUrl,
+  teacherName,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  photoUrl?: string;
+  teacherName: string;
+}) {
+  if (!isOpen || !photoUrl) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full">
+        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+          <h3 className="text-lg font-semibold">{teacherName}'s Photo</h3>
+          <button type="button" onClick={onClose}>
+            <X size={20} />
+          </button>
+        </div>
+        <div className="p-6 flex justify-center">
+          <img
+            src={`${photoUrl}`}
+            alt={teacherName}
+            className="max-w-full max-h-96 object-contain rounded-lg"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // --- Add Teacher Modal Component ---
 function AddTeacherModal({
@@ -36,23 +74,83 @@ function AddTeacherModal({
   const [whatsapp, setWhatsapp] = useState("");
   const [gender, setGender] = useState("");
   const [shift, setShift] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [cv, setCV] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setError("Photo must be an image file");
+      return;
+    }
+
+    // Validate file size (5MB = 5242880 bytes)
+    if (file.size > 5242880) {
+      setError("Photo must be 5MB or smaller");
+      return;
+    }
+
+    setPhoto(file);
+    setError(null);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCVChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== "application/pdf") {
+      setError("CV must be a PDF file");
+      return;
+    }
+
+    // Validate file size (10MB = 10485760 bytes)
+    if (file.size > 10485760) {
+      setError("CV must be 10MB or smaller");
+      return;
+    }
+
+    setCV(file);
+    setError(null);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    const teacherData = {
-      name,
-      email,
-      gender,
-      shift,
-      phone_number: phone,
-      whatsapp_number: isWhatsappDifferent ? whatsapp : phone,
-    };
+
+    // Create FormData to handle files
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("gender", gender);
+    formData.append("shift", shift);
+    formData.append("phone_number", phone);
+    formData.append("whatsapp_number", isWhatsappDifferent ? whatsapp : phone);
+
+    if (photo) {
+      formData.append("photo", photo);
+    }
+
+    if (cv) {
+      formData.append("cv", cv);
+    }
+
     try {
-      await onSave(teacherData);
+      await onSave(formData);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -181,6 +279,51 @@ function AddTeacherModal({
                 <option value="Night">Afternoon</option>
               </select>
             </div>
+            <div>
+              <label htmlFor="photo" className="block text-sm font-medium">
+                Photo (JPG, PNG, etc. - Max 5MB)
+              </label>
+              {photoPreview && (
+                <div className="mt-2 mb-2">
+                  <img
+                    src={photoPreview}
+                    alt="Photo preview"
+                    className="w-24 h-24 object-cover rounded-md border"
+                  />
+                </div>
+              )}
+              <input
+                type="file"
+                name="photo"
+                id="photo"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+              />
+              {photo && (
+                <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                  ✓ Photo selected: {photo.name}
+                </p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="cv" className="block text-sm font-medium">
+                CV (PDF only - Max 10MB)
+              </label>
+              <input
+                type="file"
+                name="cv"
+                id="cv"
+                accept=".pdf"
+                onChange={handleCVChange}
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+              />
+              {cv && (
+                <p className="mt-1 text-sm text-green-600 dark:text-green-400">
+                  ✓ CV selected: {cv.name}
+                </p>
+              )}
+            </div>
           </div>
           <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
             <button
@@ -206,12 +349,18 @@ function AddTeacherModal({
 
 // --- Main Page Component ---
 export default function TeachersPage() {
+  const user = useUser();
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   // ...existing code...
   // Session/auth check removed; now handled in layout
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [selectedTeacherPhoto, setSelectedTeacherPhoto] = useState<{
+    url?: string;
+    name: string;
+  }>({ name: "" });
   const router = useRouter();
 
   const fetchTeachers = async () => {
@@ -244,9 +393,8 @@ export default function TeachersPage() {
   const handleSaveTeacher = async (teacherData: any) => {
     const response = await fetch("http://localhost:8000/admin/teachers/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(teacherData),
+      body: teacherData, // FormData is sent directly without Content-Type header
     });
     if (!response.ok) {
       const errorData = await response.json();
@@ -279,6 +427,26 @@ export default function TeachersPage() {
     } catch (err: any) {
       alert(`Error: ${err.message}`);
     }
+  };
+
+  const handleShowPhoto = (teacher: Teacher) => {
+    if (!teacher.profile_photo_url) {
+      alert("No photo available for this teacher.");
+      return;
+    }
+    setSelectedTeacherPhoto({
+      url: teacher.profile_photo_url,
+      name: teacher.name,
+    });
+    setPhotoModalOpen(true);
+  };
+
+  const handleShowCV = (teacher: Teacher) => {
+    if (!teacher.cv_url) {
+      alert("No CV available for this teacher.");
+      return;
+    }
+    window.open(`${teacher.cv_url}`, "_blank");
   };
 
   if (isLoading) return <div className="p-10">Loading teachers...</div>;
@@ -351,14 +519,35 @@ export default function TeachersPage() {
                 <td className="px-6 py-4">{teacher.phone_number}</td>
                 <td className="px-6 py-4">0</td>
                 <td className="px-6 py-4">
-                  {user?.role === "supreme-admin" && (
-                    <button
-                      onClick={() => handleDeleteTeacher(teacher.id)}
-                      className="font-medium text-red-600 dark:text-red-500 hover:underline"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {teacher.profile_photo_url && (
+                      <button
+                        onClick={() => handleShowPhoto(teacher)}
+                        className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                        title="View Photo"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    )}
+                    {teacher.cv_url && (
+                      <button
+                        onClick={() => handleShowCV(teacher)}
+                        className="font-medium text-green-600 dark:text-green-500 hover:underline"
+                        title="Download CV"
+                      >
+                        <FileText className="w-4 h-4" />
+                      </button>
+                    )}
+                    {user?.role === "supreme-admin" && (
+                      <button
+                        onClick={() => handleDeleteTeacher(teacher.id)}
+                        className="font-medium text-red-600 dark:text-red-500 hover:underline"
+                        title="Delete Teacher"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -370,6 +559,12 @@ export default function TeachersPage() {
           </div>
         )}
       </div>
+      <PhotoModal
+        isOpen={photoModalOpen}
+        onClose={() => setPhotoModalOpen(false)}
+        photoUrl={selectedTeacherPhoto.url}
+        teacherName={selectedTeacherPhoto.name}
+      />
       <AddTeacherModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

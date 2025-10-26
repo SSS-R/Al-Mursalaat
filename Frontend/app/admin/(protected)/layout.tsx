@@ -15,6 +15,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { UserProvider } from "@/app/context/UserContext";
 
 type User = {
   email: string;
@@ -205,7 +206,9 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      <main className="flex-1 w-full md:pt-0 pt-20">{children}</main>
+      <main className="flex-1 w-full md:pt-0 pt-20">
+        <UserProvider user={user}>{children}</UserProvider>
+      </main>
     </div>
   );
 }
