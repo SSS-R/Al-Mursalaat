@@ -106,7 +106,7 @@ app.add_middleware(
 )
 
 # Mount static files for uploaded teacher photos and CVs
-BASE_DIR = Path(__file__).parent.parent
+BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "Frontend" / "public"
 app.mount("/bucket", StaticFiles(directory=str(STATIC_DIR / "bucket")), name="bucket")
 
