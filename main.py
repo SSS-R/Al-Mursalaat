@@ -451,3 +451,69 @@ def create_new_schedule(
     # In the future, we can add a check here to prevent scheduling conflicts
 
     return crud.create_schedule(db=db, schedule=schedule)
+
+# --- Session Attendance Endpoints ---
+
+@app.get("/admin/session-attendance/", response_model=list[schemas.Attendance])
+def read_session_attendance(
+    teacher_id: int,
+    start_date: date,
+    end_date: date,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin)
+):
+    """
+    Retrieves session attendance records for a teacher within a date range.
+    e.g., /admin/session-attendance/?teacher_id=1&start_date=2025-10-26&end_date=2025-11-01
+    """
+    session_attendances = db.query(models.Attendance).join(
+        models.Schedule, models.Attendance.schedule_id == models.Schedule.id
+    ).filter(
+        models.Schedule.teacher_id == teacher_id,
+        models.Attendance.class_date >= start_date,
+        models.Attendance.class_date <= end_date,
+        models.Attendance.schedule_id != None
+    ).all()
+    return session_attendances
+
+@app.post("/admin/session-attendance/", response_model=schemas.Attendance, status_code=201)
+def create_session_attendance(
+    attendance: schemas.AttendanceCreate,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin)
+):
+    """Creates a new session attendance record using the unified Attendance model."""
+    # Validate that the schedule exists
+    if attendance.schedule_id:
+        db_schedule = db.query(models.Schedule).filter(
+            models.Schedule.id == attendance.schedule_id
+        ).first()
+        if not db_schedule:
+            raise HTTPException(status_code=404, detail="Schedule not found.")
+    
+    # Check if attendance for this session on this date already exists
+    if attendance.schedule_id:
+        existing_record = crud.get_session_attendance_by_schedule_and_date(
+            db=db, schedule_id=attendance.schedule_id, class_date=attendance.class_date
+        )
+        if existing_record:
+            raise HTTPException(
+                status_code=400,
+                detail="Attendance has already been marked for this session on this date."
+            )
+    
+    return crud.create_attendance_record(db=db, attendance=attendance)
+
+@app.get("/admin/attendance-count/")
+def get_attendance_count(
+    teacher_id: int,
+    year: int,
+    month: int,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin)
+):
+    """
+    Gets attendance count summary for a teacher and all their students for a specific month.
+    e.g., /admin/attendance-count/?teacher_id=1&year=2025&month=10
+    """
+    return crud.get_attendance_count_by_month(db, teacher_id=teacher_id, year=year, month=month)
