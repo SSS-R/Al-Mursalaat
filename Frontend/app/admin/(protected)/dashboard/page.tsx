@@ -1,4 +1,3 @@
-// File: Frontend/app/admin/(protected)/dashboard/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
