@@ -199,3 +199,65 @@ def create_schedule(db: Session, schedule: schemas.ScheduleCreate):
     db.commit()
     db.refresh(db_schedule)
     return db_schedule
+
+# --- Session Attendance CRUD Functions (using unified Attendance model) ---
+
+def create_session_attendance(db: Session, schedule_id: int, class_date: date, teacher_status: str, student_status: str, student_id: int, teacher_id: int):
+    """Creates a new session attendance record using the unified Attendance model."""
+    db_attendance = models.Attendance(
+        schedule_id=schedule_id,
+        class_date=class_date,
+        teacher_status=teacher_status,
+        status=student_status,  # Map to status field
+        student_id=student_id,
+        teacher_id=teacher_id
+    )
+    db.add(db_attendance)
+    db.commit()
+    db.refresh(db_attendance)
+    return db_attendance
+
+def get_session_attendance_by_schedule_and_date(db: Session, schedule_id: int, class_date: date):
+    """Gets session attendance for a specific schedule on a specific date."""
+    return db.query(models.Attendance).filter(
+        models.Attendance.schedule_id == schedule_id,
+        models.Attendance.class_date == class_date
+    ).first()
+
+def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month: int):
+    """
+    Retrieves attendance summary for a teacher and all their students for a specific month.
+    Returns a dict with teacher_present/absent/late counts and per-student counts.
+    """
+    from datetime import datetime as dt
+    import calendar
+    
+    # Get first and last day of the month
+    first_day = dt(year, month, 1).date()
+    last_day = dt(year, month, calendar.monthrange(year, month)[1]).date()
+    
+    # Get all attendance records for this teacher in the month
+    records = db.query(models.Attendance).filter(
+        models.Attendance.teacher_id == teacher_id,
+        models.Attendance.class_date >= first_day,
+        models.Attendance.class_date <= last_day
+    ).all()
+    
+    # Calculate teacher attendance
+    teacher_counts = {"Present": 0, "Absent": 0, "Late": 0}
+    student_counts = {}
+    
+    for record in records:
+        # Count teacher attendance
+        if record.teacher_status:
+            teacher_counts[record.teacher_status] = teacher_counts.get(record.teacher_status, 0) + 1
+        
+        # Count student attendance
+        student_key = f"{record.student_id}"
+        if student_key not in student_counts:
+            student_counts[student_key] = {"Present": 0, "Absent": 0, "Late": 0, "student": record.student}
+        if record.status:
+            student_counts[student_key][record.status] = student_counts[student_key].get(record.status, 0) + 1
+    
+    return {"teacher": teacher_counts, "students": student_counts}
+    return db_schedule

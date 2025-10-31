@@ -65,9 +65,11 @@ class Schedule(ScheduleBase):
 
 class AttendanceBase(BaseModel):
     class_date: date
-    status: str
+    status: str  
     student_id: int
     teacher_id: int
+    schedule_id: Optional[int] = None 
+    teacher_status: Optional[str] = None 
     notes: Optional[str] = None
 
 class AttendanceCreate(AttendanceBase):
@@ -76,6 +78,7 @@ class AttendanceCreate(AttendanceBase):
 class Attendance(AttendanceBase):
     id: int
     created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

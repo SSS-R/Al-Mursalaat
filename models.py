@@ -85,7 +85,9 @@ class Attendance(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     class_date = Column(Date, nullable=False)
-    status = Column(String, nullable=False)  # e.g., 'Present', 'Absent', 'Late'
+    status = Column(String, nullable=False)  # e.g., 'Present', 'Absent', 'Late' (student status)
+    teacher_status = Column(String, nullable=True)  # e.g., 'Present', 'Absent', 'Late' (teacher status)
+    schedule_id = Column(Integer, ForeignKey("schedules.id"), nullable=True)  # For session-based attendance
     notes = Column(String, nullable=True)
 
     student_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
@@ -95,6 +97,7 @@ class Attendance(Base):
     teacher = relationship("Teacher", back_populates="attendances")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 class Schedule(Base):
     __tablename__ = "schedules"
