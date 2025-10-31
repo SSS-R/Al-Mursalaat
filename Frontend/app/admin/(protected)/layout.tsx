@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -206,7 +206,10 @@ export default function AdminLayout({
       </aside>
 
       <main className="flex-1 w-full md:pt-0 pt-20">
+        <Suspense>
         <UserProvider user={user}>{children}</UserProvider>
+        </Suspense>
+        
       </main>
     </div>
   );
