@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { UserPlus, Trash2, X } from 'lucide-react';
 
 // --- Types ---
@@ -167,6 +167,7 @@ export default function AdminManagementPage() {
     if (error) return <div className="p-10 text-red-500">Error: {error}</div>;
 
     return (
+        <Suspense>
         <div className="p-6 sm:p-10">
             <div className="flex items-center justify-between">
                 <div>
@@ -216,5 +217,6 @@ export default function AdminManagementPage() {
 
             <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
         </div>
+        </Suspense>
     );
 }

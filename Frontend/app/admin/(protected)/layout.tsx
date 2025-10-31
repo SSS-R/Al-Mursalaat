@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, Children } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -21,7 +21,7 @@ type User = {
   role: "supreme-admin" | "admin";
 };
 
-export default function AdminLayout({
+function AdminLayout1({
   children,
 }: {
   children: React.ReactNode;
@@ -71,6 +71,7 @@ export default function AdminLayout({
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
+    <Suspense>
     <div className="flex min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Mobile hamburger button */}
       <div className="fixed top-0 left-0 right-0 z-50 md:hidden flex items-center justify-between bg-white dark:bg-gray-800 border-b dark:border-gray-700 p-4">
@@ -206,11 +207,28 @@ export default function AdminLayout({
       </aside>
 
       <main className="flex-1 w-full md:pt-0 pt-20">
-        <Suspense>
+        
         <UserProvider user={user}>{children}</UserProvider>
-        </Suspense>
+        
         
       </main>
     </div>
+    </Suspense>
   );
+}
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode;
+})
+{
+  return (
+    <Suspense>
+      <AdminLayout1>
+        {
+          children
+        }
+      </AdminLayout1>
+    </Suspense>
+  )
 }

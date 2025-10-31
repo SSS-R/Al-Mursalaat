@@ -440,9 +440,7 @@ function ManageStudentModal({
 // --- MAIN STUDENTS PAGE COMPONENT WRAPPER ---
 export default function StudentsPageWrapper() {
   return (
-    <Suspense fallback={<div className="p-10">Loading page...</div>}>
       <StudentsPage />
-    </Suspense>
   );
 }
 
@@ -586,6 +584,7 @@ function StudentsPage() {
   if (error) return <div className="p-10 text-red-500">Error: {error}</div>;
 
   return (
+    <Suspense>
     <div className="p-6 sm:p-10">
       <div className="flex items-center justify-between">
         <div>
@@ -763,5 +762,6 @@ function StudentsPage() {
         />
       )}
     </div>
+    </Suspense>
   );
 }

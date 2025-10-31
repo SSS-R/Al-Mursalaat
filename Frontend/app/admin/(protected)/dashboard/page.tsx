@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Users, BookOpen, UserPlus, AlertCircle } from "lucide-react";
 
 // Define types for the data we expect
@@ -73,6 +73,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
+    <Suspense>
     <div className="p-6 sm:p-10">
       <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
         Dashboard Overview
@@ -108,8 +109,9 @@ export default function AdminDashboardPage() {
           </>
         )}
       </div>
-
+      
       {/* We can add more components like charts or recent activity feeds here later */}
     </div>
+    </Suspense>
   );
 }
