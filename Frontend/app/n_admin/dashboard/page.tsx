@@ -269,6 +269,7 @@ function SessionAttendanceModal({
   schedule,
   classDate,
   student,
+  teacher_id,
   existingAttendance,
 }: {
   isOpen: boolean;
@@ -277,6 +278,7 @@ function SessionAttendanceModal({
   schedule: Schedule | null;
   classDate: string;
   student: Student | null;
+  teacher_id: number | null;
   existingAttendance?: SessionAttendance | null;
 }) {
   const [teacherStatus, setTeacherStatus] = useState("Present");
@@ -300,7 +302,7 @@ function SessionAttendanceModal({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!schedule || isReadOnly) return;
+    if (!schedule || !student || !teacher_id || isReadOnly) return;
 
     setIsLoading(true);
     setError(null);
@@ -310,6 +312,8 @@ function SessionAttendanceModal({
       class_date: classDate,
       teacher_status: teacherStatus,
       status: studentStatus,
+      student_id: student.id,
+      teacher_id: teacher_id,
     };
 
     try {
@@ -746,9 +750,14 @@ export default function NormalAdminDashboard() {
   }, [teachers, shiftFilter, sortBy]);
 
   const handleToggle = (teacherId: number) => {
-    setOpenTeacherId((currentId) =>
-      currentId === teacherId ? null : teacherId
-    );
+    setOpenTeacherId((currentId) => {
+      const newId = currentId === teacherId ? null : teacherId;
+      // If opening a teacher, reload the attendance count
+      if (newId === teacherId) {
+        fetchAttendanceCount(teacherId, selectedMonth);
+      }
+      return newId;
+    });
   };
 
   const handleStatusChange = (studentId: number, status: string) => {
@@ -892,6 +901,14 @@ export default function NormalAdminDashboard() {
     }
     alert("Session attendance saved successfully!");
     setIsSessionAttendanceModalOpen(false);
+
+    // Reload attendance count if the saved attendance is in the currently selected month
+    if (openTeacherId) {
+      const attendanceMonth = attendanceData.class_date.slice(0, 7); // Extract YYYY-MM
+      if (attendanceMonth === selectedMonth) {
+        fetchAttendanceCount(openTeacherId, selectedMonth);
+      }
+    }
   };
 
   if (isLoading) return <div className="p-10">Loading teacher data...</div>;
@@ -983,7 +1000,7 @@ export default function NormalAdminDashboard() {
                     onAddSchedule={() => handleAddScheduleClick(teacher)}
                     onSessionClick={handleSessionClick}
                   />
-                  <div className="border-t dark:border-gray-700 p-4">
+                  {/* <div className="border-t dark:border-gray-700 p-4">
                     <div className="flex items-center space-x-4 mb-4">
                       <label htmlFor="class-date" className="font-semibold">
                         Mark Attendance for:
@@ -1058,7 +1075,7 @@ export default function NormalAdminDashboard() {
                         No students are assigned to this teacher.
                       </p>
                     )}
-                  </div>
+                  </div> */}
 
                   {/* Attendance Count Section */}
                   <div className="border-t dark:border-gray-700 p-4">
@@ -1186,6 +1203,7 @@ export default function NormalAdminDashboard() {
         schedule={selectedSchedule}
         classDate={selectedSessionDate}
         student={selectedStudent}
+        teacher_id={openTeacherId}
         existingAttendance={existingSessionAttendance}
       />
     </div>
