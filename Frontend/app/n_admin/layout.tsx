@@ -1,4 +1,3 @@
-// File: Frontend/app/n_admin/layout.tsx
 "use client";
 
 import { useState, useEffect } from "react";

@@ -1,4 +1,3 @@
-// File: Frontend/app/admin/(protected)/students/page.tsx
 "use client";
 
 import { useState, useMemo, useEffect, Suspense, FormEvent } from "react";
