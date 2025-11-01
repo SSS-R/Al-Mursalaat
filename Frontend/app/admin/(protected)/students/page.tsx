@@ -466,10 +466,10 @@ function StudentsPage() {
     setIsLoading(true);
     try {
       const [studentsRes, teachersRes] = await Promise.all([
-        fetch("http://localhost:8000/admin/students/", {
+        fetch("/admin/students/", {
           credentials: "include",
         }),
-        fetch("http://localhost:8000/admin/teachers/", {
+        fetch("/admin/teachers/", {
           credentials: "include",
         }),
       ]);
@@ -491,7 +491,7 @@ function StudentsPage() {
   }, []);
 
   const handleSaveNewStudent = async (studentData: any) => {
-    const response = await fetch("http://localhost:8000/admin/add-student/", {
+    const response = await fetch("/admin/add-student/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -511,7 +511,7 @@ function StudentsPage() {
   }) => {
     if (!selectedStudent) return;
     const response = await fetch(
-      `http://localhost:8000/admin/students/${selectedStudent.id}/assign`,
+      `/admin/students/${selectedStudent.id}/assign`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

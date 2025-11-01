@@ -692,7 +692,7 @@ export default function NormalAdminDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:8000/admin/teachers/", {
+      const response = await fetch("/admin/teachers/", {
         credentials: "include",
       });
       if (!response.ok)
@@ -715,7 +715,7 @@ export default function NormalAdminDashboard() {
 
     const fetchAttendance = async () => {
       const response = await fetch(
-        `http://localhost:8000/admin/attendance/?teacher_id=${openTeacherId}&class_date=${selectedDate}`,
+        `/admin/attendance/?teacher_id=${openTeacherId}&class_date=${selectedDate}`,
         { credentials: "include" }
       );
       if (response.ok) {
@@ -790,7 +790,7 @@ export default function NormalAdminDashboard() {
     try {
       await Promise.all(
         recordsToSave.map((record) =>
-          fetch("http://localhost:8000/admin/attendance/", {
+          fetch("/admin/attendance/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -805,7 +805,7 @@ export default function NormalAdminDashboard() {
       );
       alert("Attendance saved successfully!");
       const response = await fetch(
-        `http://localhost:8000/admin/attendance/?teacher_id=${teacherId}&class_date=${selectedDate}`,
+        `/admin/attendance/?teacher_id=${teacherId}&class_date=${selectedDate}`,
         { credentials: "include" }
       );
       const data = await response.json();
@@ -823,7 +823,7 @@ export default function NormalAdminDashboard() {
   };
 
   const handleSaveSchedule = async (scheduleData: any) => {
-    const response = await fetch("http://localhost:8000/admin/schedules/", {
+    const response = await fetch("/admin/schedules/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -853,7 +853,7 @@ export default function NormalAdminDashboard() {
 
   const fetchSessionAttendance = async (scheduleId: number, date: string) => {
     const response = await fetch(
-      `http://localhost:8000/admin/session-attendance/?teacher_id=${openTeacherId}&start_date=${date}&end_date=${date}`,
+      `/admin/session-attendance/?teacher_id=${openTeacherId}&start_date=${date}&end_date=${date}`,
       { credentials: "include" }
     );
     if (response.ok) {
@@ -870,7 +870,7 @@ export default function NormalAdminDashboard() {
     const [year, month] = monthStr.split("-");
     try {
       const response = await fetch(
-        `http://localhost:8000/admin/attendance-count/?teacher_id=${teacherId}&year=${year}&month=${month}`,
+        `/admin/attendance-count/?teacher_id=${teacherId}&year=${year}&month=${month}`,
         { credentials: "include" }
       );
       if (response.ok) {
@@ -886,7 +886,7 @@ export default function NormalAdminDashboard() {
 
   const handleSaveSessionAttendance = async (attendanceData: any) => {
     const response = await fetch(
-      "http://localhost:8000/admin/session-attendance/",
+      "/admin/session-attendance/",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

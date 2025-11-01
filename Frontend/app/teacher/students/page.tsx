@@ -22,7 +22,7 @@ export default function TeacherStudentsPage() {
     useEffect(() => {
         const fetchTeacherData = async () => {
             try {
-                const response = await fetch('http://localhost:8000/teacher/me', { credentials: 'include' });
+                const response = await fetch('/teacher/me', { credentials: 'include' });
                 if (!response.ok) {
                     throw new Error('Could not fetch data. Please re-login.');
                 }

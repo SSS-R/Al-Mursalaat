@@ -50,7 +50,7 @@ export default function AdminDashboardPage() {
     const fetchDashboardData = async () => {
       try {
         const statsRes = await fetch(
-          "http://localhost:8000/admin/dashboard-stats/",
+          "/admin/dashboard-stats/",
           { credentials: "include" }
         );
         if (!statsRes.ok) throw new Error("Failed to fetch stats.");

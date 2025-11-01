@@ -42,7 +42,7 @@ export default function AdminLoginPage() {
             params.append('username', email);
             params.append('password', password);
 
-            const response = await fetch('http://localhost:8000/login', {
+            const response = await fetch('/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',

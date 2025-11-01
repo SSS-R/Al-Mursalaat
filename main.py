@@ -95,6 +95,8 @@ async def startup():
 origins = [
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://almursalaatonline.com",
+    "https://www.almursalaatonline.com"
 ]
 
 app.add_middleware(
