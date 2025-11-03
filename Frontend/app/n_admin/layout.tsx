@@ -24,7 +24,7 @@ export default function NormalAdminLayout({
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/auth/me");
+        const response = await fetch("/api/v1/auth/me");
         if (!response.ok) {
           router.push("/login");
           return;
@@ -42,7 +42,7 @@ export default function NormalAdminLayout({
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/v1/auth/logout", { method: "POST" });
     router.push("/login");
   };
 

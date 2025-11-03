@@ -17,7 +17,7 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchUser = async () => {
             try {
-                const response = await fetch('/api/auth/me', { credentials: 'include' });
+                const response = await fetch('/api/v1/auth/me', { credentials: 'include' });
                 if (response.ok) setUser(await response.json());
             } catch (error) { console.error("Failed to fetch user data:", error); }
         };
@@ -32,7 +32,7 @@ export default function ProfilePage() {
 
         setIsLoading(true);
         try {
-            const response = await fetch('/admin/users/me/change-password', {
+            const response = await fetch('/api/v1/admin/users/me/change-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
