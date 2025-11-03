@@ -466,10 +466,10 @@ function StudentsPage() {
     setIsLoading(true);
     try {
       const [studentsRes, teachersRes] = await Promise.all([
-        fetch("/admin/students/", {
+        fetch("/api/v1/admin/students/", {
           credentials: "include",
         }),
-        fetch("/admin/teachers/", {
+        fetch("/api/v1/admin/teachers/", {
           credentials: "include",
         }),
       ]);

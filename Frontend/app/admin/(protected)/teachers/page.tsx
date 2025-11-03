@@ -364,7 +364,7 @@ export default function TeachersPage() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch("/admin/teachers/", {
+      const response = await fetch("/api/v1/admin/teachers/", {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to fetch teachers.");
