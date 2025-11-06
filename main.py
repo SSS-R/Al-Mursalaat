@@ -161,7 +161,7 @@ def submit_application(application: schemas.ApplicationCreate, background_tasks:
     background_tasks.add_task(email_sender.send_admin_notification, application_data=application_dict)
     return new_application
 
-@app.post("/login")
+@app.post("/v1/api/login")
 def login_for_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
