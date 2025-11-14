@@ -32,7 +32,7 @@ export default function TeacherLayout({
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/v1/auth/me");
+        const response = await fetch("/api/auth/me");
         if (!response.ok) {
           router.push("/login"); // Redirect to login if not authenticated
           return;
@@ -60,7 +60,7 @@ export default function TeacherLayout({
   }, [router]);
 
   const handleLogout = async () => {
-    await fetch("/api/v1/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };
 

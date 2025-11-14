@@ -37,7 +37,7 @@ function AdminLayout1({
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch("/api/v1/auth/me");
+        const response = await fetch("/api/auth/me");
         if (!response.ok) {
           router.push("/login");
           return;
@@ -54,7 +54,7 @@ function AdminLayout1({
   }, [pathname]);
 
   const handleLogout = async () => {
-    await fetch("/api/v1/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
   };
 

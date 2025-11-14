@@ -111,7 +111,7 @@ export default function AdminManagementPage() {
     const fetchAdmins = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/v1/admin/users/', { credentials: 'include' });
+            const response = await fetch('/admin/users/', { credentials: 'include' });
             if (!response.ok) throw new Error('Failed to fetch admins.');
             const data: AdminUser[] = await response.json();
             setAdmins(data);
@@ -127,7 +127,7 @@ export default function AdminManagementPage() {
     }, []);
 
     const handleSaveAdmin = async (adminData: any) => {
-        const response = await fetch('/api/v1/admin/create-admin/', {
+        const response = await fetch('/admin/create-admin/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
@@ -148,7 +148,7 @@ export default function AdminManagementPage() {
             return;
         }
         try {
-            const response = await fetch(`/api/v1/admin/users/${userId}`, {
+            const response = await fetch(`/admin/users/${userId}`, {
                 method: 'DELETE',
                 credentials: 'include',
             });
