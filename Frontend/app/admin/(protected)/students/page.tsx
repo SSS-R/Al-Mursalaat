@@ -491,7 +491,7 @@ function StudentsPage() {
   }, []);
 
   const handleSaveNewStudent = async (studentData: any) => {
-    const response = await fetch("/admin/add-student/", {
+    const response = await fetch("/api/admin/add-student/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -511,7 +511,7 @@ function StudentsPage() {
   }) => {
     if (!selectedStudent) return;
     const response = await fetch(
-      `/admin/students/${selectedStudent.id}/assign`,
+      `/api/admin/students/${selectedStudent.id}/assign`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },

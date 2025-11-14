@@ -364,7 +364,7 @@ export default function TeachersPage() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch("/admin/teachers/", {
+      const response = await fetch("/api/admin/teachers/", {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to fetch teachers.");
@@ -390,7 +390,7 @@ export default function TeachersPage() {
   }, []);
 
   const handleSaveTeacher = async (teacherData: any) => {
-    const response = await fetch("/admin/teachers/", {
+    const response = await fetch("/api/admin/teachers/", {
       method: "POST",
       credentials: "include",
       body: teacherData, // FormData is sent directly without Content-Type header
@@ -409,7 +409,7 @@ export default function TeachersPage() {
     }
     try {
       const response = await fetch(
-        `/admin/teachers/${teacherId}`,
+        `/api/admin/teachers/${teacherId}`,
         {
           method: "DELETE",
           credentials: "include",

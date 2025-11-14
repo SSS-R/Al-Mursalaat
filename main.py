@@ -161,7 +161,7 @@ def submit_application(application: schemas.ApplicationCreate, background_tasks:
     background_tasks.add_task(email_sender.send_admin_notification, application_data=application_dict)
     return new_application
 
-@app.post("/login")
+@app.post("/api/login")
 def login_for_access_token(
     db: Session = Depends(get_db),
     form_data: OAuth2PasswordRequestForm = Depends()
@@ -194,7 +194,7 @@ def login_for_access_token(
     return {"access_token": access_token, "token_type": "bearer"}
 # --- Admin/User Endpoints ---
 
-@app.get("/admin/users/", response_model=list[schemas.User])
+@app.get("/api/admin/users/", response_model=list[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
@@ -212,7 +212,7 @@ def create_admin_user(user: schemas.UserCreate, background_tasks: BackgroundTask
     background_tasks.add_task(email_sender.send_admin_credentials_email, admin_data=schemas.User.from_orm(new_user).model_dump(), temp_password=temp_password)
     return new_user
 
-@app.delete("/admin/users/{user_id}", response_model=schemas.User)
+@app.delete("/api/admin/users/{user_id}", response_model=schemas.User)
 def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
@@ -224,7 +224,7 @@ def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin
     crud.delete_user(db=db, user_id=user_id)
     return user_to_delete
 
-@app.post("/admin/users/me/change-password")
+@app.post("/api/admin/users/me/change-password")
 def change_current_user_password(
     password_data: schemas.PasswordUpdate,
     db: Session = Depends(get_db),
@@ -248,7 +248,7 @@ def change_current_user_password(
 
 # --- Teacher Endpoints ---
 
-@app.get("/admin/teachers/", response_model=list[schemas.TeacherWithStudents])
+@app.get("/api/admin/teachers/", response_model=list[schemas.TeacherWithStudents])
 def read_teachers(
     skip: int = 0, 
     limit: int = 100, 
@@ -269,7 +269,7 @@ def read_teachers(
     
     return teachers
 
-@app.post("/admin/teachers/", response_model=schemas.Teacher, status_code=201)
+@app.post("/api/admin/teachers/", response_model=schemas.Teacher, status_code=201)
 async def create_new_teacher(
     name: str = Form(...),
     email: str = Form(...),
@@ -322,7 +322,7 @@ async def create_new_teacher(
     background_tasks.add_task(email_sender.send_teacher_credentials_email, teacher_data=schemas.Teacher.from_orm(new_teacher).model_dump(), temp_password=temp_password)
     return new_teacher
 
-@app.delete("/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
+@app.delete("/api/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
 def delete_a_teacher(teacher_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
@@ -339,7 +339,7 @@ def delete_a_teacher(teacher_id: int, db: Session = Depends(get_db), current_adm
     crud.delete_teacher(db=db, teacher_id=teacher_id)
     return db_teacher
 
-@app.get("/teacher/me", response_model=schemas.TeacherWithStudents)
+@app.get("/api/teacher/me", response_model=schemas.TeacherWithStudents)
 def get_teacher_me(
     current_user: models.Teacher = Depends(get_current_admin)
 ):
@@ -353,14 +353,14 @@ def get_teacher_me(
 
 # --- Student Endpoints ---
 
-@app.get("/admin/students/", response_model=list[schemas.Application])
+@app.get("/api/admin/students/", response_model=list[schemas.Application])
 def read_students(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     students = crud.get_applications(db, skip=skip, limit=limit)
     #for student in students:
         #print(f"DEBUG: Student ID {student.id}, Teacher Object: {student.teacher}")
     return students
 
-@app.post("/admin/add-student/", response_model=schemas.Application, status_code=201)
+@app.post("/api/admin/add-student/", response_model=schemas.Application, status_code=201)
 def add_student_by_admin(application: schemas.ApplicationCreate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     db_application = crud.get_application_by_email(db, email=application.email)
     if db_application:
@@ -368,7 +368,7 @@ def add_student_by_admin(application: schemas.ApplicationCreate, db: Session = D
     new_student = crud.create_application(db=db, application=application)
     return new_student
 
-@app.patch("/admin/students/{student_id}/assign", response_model=schemas.Application)
+@app.patch("/api/admin/students/{student_id}/assign", response_model=schemas.Application)
 def assign_student(student_id: int, assignment: schemas.StudentAssign, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     db_student = crud.get_application_by_id(db, application_id=student_id)
     if not db_student:
@@ -381,7 +381,7 @@ def assign_student(student_id: int, assignment: schemas.StudentAssign, db: Sessi
 
 # --- Dashboard Stats Endpoint ---
 
-@app.get("/admin/dashboard-stats/")
+@app.get("/api/admin/dashboard-stats/")
 def get_dashboard_stats(db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     total_students = db.query(models.Application).count()
     total_teachers = db.query(models.Teacher).count()
@@ -396,7 +396,7 @@ def get_dashboard_stats(db: Session = Depends(get_db), current_admin: dict = Dep
 
 # --- Attendance Endpoints ---
 
-@app.get("/admin/attendance/", response_model=List[schemas.Attendance])
+@app.get("/api/admin/attendance/", response_model=List[schemas.Attendance])
 def read_attendance_records(
     teacher_id: int,
     class_date: date,
@@ -412,7 +412,7 @@ def read_attendance_records(
     )
     return attendance_records
 
-@app.post("/admin/attendance/", response_model=schemas.Attendance, status_code=201)
+@app.post("/api/admin/attendance/", response_model=schemas.Attendance, status_code=201)
 def mark_student_attendance(
     attendance: schemas.AttendanceCreate,
     db: Session = Depends(get_db),
@@ -432,7 +432,7 @@ def mark_student_attendance(
     return crud.create_attendance_record(db=db, attendance=attendance)
 
 # --- Schedule Endpoints ---
-@app.post("/admin/schedules/", response_model=schemas.Schedule, status_code=201)
+@app.post("/api/admin/schedules/", response_model=schemas.Schedule, status_code=201)
 def create_new_schedule(
     schedule: schemas.ScheduleCreate,
     db: Session = Depends(get_db),
@@ -456,7 +456,7 @@ def create_new_schedule(
 
 # --- Session Attendance Endpoints ---
 
-@app.get("/admin/session-attendance/", response_model=list[schemas.Attendance])
+@app.get("/api/admin/session-attendance/", response_model=list[schemas.Attendance])
 def read_session_attendance(
     teacher_id: int,
     start_date: date,
@@ -478,7 +478,7 @@ def read_session_attendance(
     ).all()
     return session_attendances
 
-@app.post("/admin/session-attendance/", response_model=schemas.Attendance, status_code=201)
+@app.post("/api/admin/session-attendance/", response_model=schemas.Attendance, status_code=201)
 def create_session_attendance(
     attendance: schemas.AttendanceCreate,
     db: Session = Depends(get_db),
@@ -506,7 +506,7 @@ def create_session_attendance(
     
     return crud.create_attendance_record(db=db, attendance=attendance)
 
-@app.get("/admin/attendance-count/")
+@app.get("/api/admin/attendance-count/")
 def get_attendance_count(
     teacher_id: int,
     year: int,

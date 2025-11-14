@@ -31,7 +31,7 @@ export default function TeacherDashboard() {
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
-        const response = await fetch("/teacher/me", {
+        const response = await fetch("/api/teacher/me", {
           credentials: "include",
         });
         if (!response.ok) {

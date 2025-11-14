@@ -54,7 +54,7 @@ export default function ProfilePage() {
 
         setIsLoading(true);
         try {
-            const response = await fetch('/admin/users/me/change-password', {
+            const response = await fetch('/api/admin/users/me/change-password', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
