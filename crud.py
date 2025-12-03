@@ -45,6 +45,18 @@ def create_user(db: Session, user: schemas.UserCreate, password: str):
     db.refresh(db_user)
     return db_user
 
+# --- COURSE CRUD (NEW) ---
+def create_course(db: Session, course: schemas.CourseCreate):
+    """Creates one of the 4 course types."""
+    db_course = models.Course(**course.model_dump())
+    db.add(db_course); db.commit(); db.refresh(db_course); return db_course
+
+def get_courses(db: Session):
+    return db.query(models.Course).all()
+
+def get_course_by_name(db: Session, name: str):
+    # Case insensitive search to match "Quran Reading" with "quran reading"
+    return db.query(models.Course).filter(models.Course.name.ilike(name)).first()
 
 def get_application_by_email(db: Session, email: str):
     """
@@ -53,20 +65,17 @@ def get_application_by_email(db: Session, email: str):
     return db.query(models.Application).filter(models.Application.email == email).first()
 
 def create_application(db: Session, application: schemas.ApplicationCreate):
-    """
-    Creates a new application record in the database.
-    """
-    # --- NO CHANGES NEEDED HERE ---
-    # This code was already correct. `application.model_dump()` creates a dictionary
-    # from the Pydantic model. Because we fixed `models.py`, the keys in this
-    # dictionary (e.g., 'gender') now correctly match the attributes of the
-    # `models.Application` class.
-    application_data = application.model_dump()
-    db_application = models.Application(**application_data)
-    db.add(db_application)
-    db.commit()
-    db.refresh(db_application) # Refresh to get the new ID and created_at from the DB
-    return db_application
+    app_data = application.model_dump()
+    
+    # Logic: If the string entered in "preferred_course" matches a Course in our DB,
+    # we link the ID. This "connects" the text to the system.
+    if application.preferred_course:
+        course = get_course_by_name(db, application.preferred_course)
+        if course:
+            app_data['course_id'] = course.id
+            
+    db_application = models.Application(**app_data)
+    db.add(db_application); db.commit(); db.refresh(db_application); return db_application
 
 def get_user_by_email(db: Session, email: str):
     """Queries the database for a user with a specific email address."""
@@ -137,9 +146,11 @@ def get_application_by_id(db: Session, application_id: int):
     """Queries for a single application by its ID."""
     return db.query(models.Application).filter(models.Application.id == application_id).first()
 
-def get_applications(db: Session, skip: int = 0, limit: int = 100):
-    """Retrieves all application records from the database."""
-    return db.query(models.Application).options(joinedload(models.Application.teacher)).offset(skip).limit(limit).all()
+def get_applications(db, skip=0, limit=100): 
+    # Eager load the course so frontend can see the official course details
+    return db.query(models.Application).options(
+        joinedload(models.Application.teacher), joinedload(models.Application.course)
+    ).offset(skip).limit(limit).all()
 
 def get_teachers_by_gender(db: Session, gender: str, skip: int = 0, limit: int = 100):
     """Retrieves all teacher records of a specific gender."""
@@ -200,6 +211,21 @@ def create_schedule(db: Session, schedule: schemas.ScheduleCreate):
     db.refresh(db_schedule)
     return db_schedule
 
+def update_schedule(db: Session, schedule_id: int, schedule_update: schemas.ScheduleUpdate):
+    """
+    Patches a schedule. If admin sends only 'start_time', only that is updated.
+    """
+    db_schedule = db.query(models.Schedule).filter(models.Schedule.id == schedule_id).first()
+    if not db_schedule: return None
+    
+    # Only update provided fields (exclude_unset=True)
+    update_data = schedule_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_schedule, key, value)
+        
+    db.commit(); db.refresh(db_schedule)
+    return db_schedule
+
 # --- Session Attendance CRUD Functions (using unified Attendance model) ---
 
 def create_session_attendance(db: Session, schedule_id: int, class_date: date, teacher_status: str, student_status: str, student_id: int, teacher_id: int):
@@ -226,38 +252,54 @@ def get_session_attendance_by_schedule_and_date(db: Session, schedule_id: int, c
 
 def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month: int):
     """
-    Retrieves attendance summary for a teacher and all their students for a specific month.
-    Returns a dict with teacher_present/absent/late counts and per-student counts.
+    Groups attendance by COURSE NAME.
+    Returns format: 
+    { "teacher_by_course": { "Quran Nazra": {"Present": 5, "Late": 0} } }
     """
     from datetime import datetime as dt
     import calendar
     
-    # Get first and last day of the month
-    first_day = dt(year, month, 1).date()
-    last_day = dt(year, month, calendar.monthrange(year, month)[1]).date()
+    first = dt(year, month, 1).date()
+    last = dt(year, month, calendar.monthrange(year, month)[1]).date()
     
-    # Get all attendance records for this teacher in the month
-    records = db.query(models.Attendance).filter(
-        models.Attendance.teacher_id == teacher_id,
-        models.Attendance.class_date >= first_day,
-        models.Attendance.class_date <= last_day
+    # Fetch attendance, joined with Student and their Course
+    records = db.query(models.Attendance).join(models.Application).outerjoin(models.Course).filter(
+        models.Attendance.teacher_id==teacher_id, 
+        models.Attendance.class_date>=first, 
+        models.Attendance.class_date<=last
+    ).options(
+        joinedload(models.Attendance.student).joinedload(models.Application.course)
     ).all()
     
-    # Calculate teacher attendance
-    teacher_counts = {"Present": 0, "Absent": 0, "Late": 0}
+    course_counts = {}
     student_counts = {}
     
-    for record in records:
-        # Count teacher attendance
-        if record.teacher_status:
-            teacher_counts[record.teacher_status] = teacher_counts.get(record.teacher_status, 0) + 1
-        
-        # Count student attendance
-        student_key = f"{record.student_id}"
-        if student_key not in student_counts:
-            student_counts[student_key] = {"Present": 0, "Absent": 0, "Late": 0, "student": record.student}
-        if record.status:
-            student_counts[student_key][record.status] = student_counts[student_key].get(record.status, 0) + 1
-    
-    return {"teacher": teacher_counts, "students": student_counts}
-    return db_schedule
+    for r in records:
+        # Determine Course Name for this record
+        # Priority: 1. Linked Course Name, 2. Text in 'preferred_course', 3. "Unknown"
+        c_name = "Unknown"
+        if r.student:
+            if r.student.course:
+                c_name = r.student.course.name
+            elif r.student.preferred_course:
+                c_name = r.student.preferred_course
+            
+        # Initialize bucket for this course if not exists
+        if c_name not in course_counts:
+            course_counts[c_name] = {"Present": 0, "Absent": 0, "Late": 0}
+            
+        # Increment counts based on teacher_status (Present/Late/Absent)
+        t_status = r.teacher_status
+        if t_status:
+            # Handle standard statuses, or create new key if status is custom
+            current_val = course_counts[c_name].get(t_status, 0)
+            course_counts[c_name][t_status] = current_val + 1
+            
+        # Student Stats (For detailed history)
+        s_key = f"{r.student_id}"
+        if s_key not in student_counts:
+            student_counts[s_key] = {"student": r.student, "counts": {}}
+        if r.status:
+            student_counts[s_key]["counts"][r.status] = student_counts[s_key]["counts"].get(r.status, 0) + 1
+            
+    return {"teacher_by_course": course_counts, "students": student_counts}

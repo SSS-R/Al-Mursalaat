@@ -5,6 +5,21 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from database import Base
 
+class Course(Base):
+    """
+    Central definition for courses
+    used to standardize dropdowns and reporting.
+    """
+    __tablename__= "courses"
+    
+    id= Column(Integer, primary_key= True, index= True)
+    name = Column(String, unique=True, index= True)
+    description= Column(String, nullable=True)
+    
+    created_at= Column(DateTime(timezone=True), server_default=func.now())
+    
+    applications= relationship("Application", back_populates="course")
+
 class Application(Base):
     """
     SQLAlchemy model for the 'applications' table in the database.
@@ -20,6 +35,7 @@ class Application(Base):
     country = Column(String)
     state=Column(String, nullable= True)
     preferred_course = Column(String)
+    course_id= Column(Integer, ForeignKey("courses.id"), nullable= True)
     age = Column(Integer)
     status = Column(String, default='Pending')
     previous_experience = Column(String, nullable=True)
@@ -36,6 +52,7 @@ class Application(Base):
     shift = Column(String, nullable=True)
     teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=True)
     teacher = relationship("Teacher", back_populates="students")
+    course= relationship("Course", back_populates="applications")
     attendances = relationship("Attendance", back_populates="student")
     # Timestamps are handled automatically by the database
     created_at = Column(DateTime(timezone=True), server_default=func.now())

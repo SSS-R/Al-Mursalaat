@@ -1,8 +1,23 @@
 # schemas.py
 
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, date, time
+
+# --- Course Schemas (New) ---
+
+class CourseBase(BaseModel):
+    name: str # e.g. "Quran Reading (Nazra)"
+    description: Optional[str] = None
+
+class CourseCreate(CourseBase):
+    pass
+
+class Course(CourseBase):
+    id: int
+    created_at: datetime
+    class Config:
+        from_attributes = True
 
 # --- Base Schemas (No dependencies on other schemas) ---
 
@@ -14,6 +29,7 @@ class ApplicationBase(BaseModel):
     country: str
     state: Optional[str]= None
     preferred_course: str
+    course_id: Optional[int]= None
     age: int = Field(..., gt=0)
     previous_experience: Optional[str] = None
     learning_goals: Optional[str] = None
@@ -54,6 +70,13 @@ class ScheduleBase(BaseModel):
 class ScheduleCreate(ScheduleBase):
     pass
 
+class ScheduleUpdate(BaseModel):
+    day_of_week: Optional[str] = None
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    zoom_link: Optional[str] = None
+    student_id: Optional[int] = None
+    teacher_id: Optional[int] = None
 class Schedule(ScheduleBase):
     id: int
     student: 'Application'
@@ -127,13 +150,14 @@ class TeacherWithStudents(Teacher):
     class Config:
         from_attributes = True
 
-# --- Resolve Forward References ---
-# This is a crucial step that allows the schemas to refer to each other.
-Application.model_rebuild()
-TeacherWithStudents.model_rebuild()
-Schedule.model_rebuild()
-# --- Schemas for Specific Actions ---
+class AttendanceStats(BaseModel):
+    # e.g. { "Quran Nazra": {"Present": 5, "Late": 0}, "Memorization": {"Present": 8} }
+    teacher_by_course: Dict[str, Dict[str, int]] 
+    # Detailed student stats
+    students: Dict[str, Any]
 
+
+# --- Schemas for Specific Actions ---
 class StudentAssign(BaseModel):
     teacher_id: int
     shift: str
@@ -141,4 +165,8 @@ class StudentAssign(BaseModel):
 class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str
-
+# --- Resolve Forward References ---
+# This is a crucial step that allows the schemas to refer to each other.
+Application.model_rebuild()
+TeacherWithStudents.model_rebuild()
+Schedule.model_rebuild()

@@ -151,14 +151,10 @@ def read_root():
 
 @app.post("/submit-application/", response_model=schemas.Application, dependencies=[Depends(RateLimiter(times=3, minutes=2))])
 def submit_application(application: schemas.ApplicationCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    db_application = crud.get_application_by_email(db, email=application.email)
-    if db_application:
-        raise HTTPException(status_code=400, detail="An application with this email address already exists.")
+    if crud.get_application_by_email(db, email=application.email):
+        raise HTTPException(status_code=400, detail="Email already exists.")
+    # Smart Link: Connects student to the Course Table automatically
     new_application = crud.create_application(db=db, application=application)
-    application_dict = schemas.Application.from_orm(new_application).model_dump()
-    background_tasks.add_task(sheets.append_to_sheet, application_data=application_dict)
-    background_tasks.add_task(email_sender.send_student_confirmation, application_data=application_dict)
-    background_tasks.add_task(email_sender.send_admin_notification, application_data=application_dict)
     return new_application
 
 @app.post("/api/login")
@@ -506,16 +502,49 @@ def create_session_attendance(
     
     return crud.create_attendance_record(db=db, attendance=attendance)
 
-@app.get("/api/admin/attendance-count/")
+@app.get("/api/admin/attendance-count/", response_model=schemas.AttendanceStats)
 def get_attendance_count(
-    teacher_id: int,
-    year: int,
-    month: int,
-    db: Session = Depends(get_db),
-    current_admin: models.User = Depends(get_current_admin)
+    teacher_id: int, year: int, month: int, 
+    db: Session=Depends(get_db), current_admin=Depends(get_current_admin)
 ):
     """
-    Gets attendance count summary for a teacher and all their students for a specific month.
-    e.g., /admin/attendance-count/?teacher_id=1&year=2025&month=10
+    Returns simplified stats:
+    'Quran Learning (Kayda)': {'Present': 5, 'Late': 0},
+    'Quran Reading (Nazra)': {'Present': 7}
     """
-    return crud.get_attendance_count_by_month(db, teacher_id=teacher_id, year=year, month=month)
+    return crud.get_attendance_count_by_month(db, teacher_id, year, month)
+
+# new api endpoints
+
+@app.patch("/api/admin/schedules/{schedule_id}", response_model=schemas.Schedule)
+def update_existing_schedule(schedule_id: int, schedule_update: schemas.ScheduleUpdate, db: Session=Depends(get_db), current_admin=Depends(get_current_admin)):
+    """Admin can fix schedule mistakes here."""
+    if current_admin.role not in ["admin", "supreme-admin"]: raise HTTPException(403)
+    return crud.update_schedule(db, schedule_id, schedule_update)
+
+@app.get("/api/teacher/my-attendance-stats", response_model=schemas.AttendanceStats)
+def get_my_stats(
+    year: int, month: int, 
+    db: Session=Depends(get_db), current_user=Depends(get_current_admin)
+):
+    """Teacher sees their own stats for the month."""
+    if current_user.role != "teacher": raise HTTPException(403)
+    return crud.get_attendance_count_by_month(db, current_user.id, year, month)
+
+@app.get("/api/courses/", response_model=List[schemas.Course])
+def read_courses(db: Session = Depends(get_db)):
+    """Used by frontend dropdowns to show available courses."""
+    return crud.get_courses(db)
+
+@app.post("/api/admin/courses/", response_model=schemas.Course, status_code=201)
+def create_course(
+    course: schemas.CourseCreate,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    """Admin creates the 4 standard courses here."""
+    if current_admin.role not in ["admin", "supreme-admin"]:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    if crud.get_course_by_name(db, course.name):
+        raise HTTPException(status_code=400, detail="Course already exists")
+    return crud.create_course(db, course)
