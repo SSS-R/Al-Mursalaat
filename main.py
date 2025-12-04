@@ -195,7 +195,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), c
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
 
-@app.post("/admin/create-admin/", response_model=schemas.User, status_code=201)
+@app.post("/api/admin/create-admin/", response_model=schemas.User, status_code=201)
 def create_admin_user(user: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
     if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
