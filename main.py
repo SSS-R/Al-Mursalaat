@@ -38,6 +38,40 @@ app = FastAPI(
     description="API for handling student applications.",
     version="1.0.0"
 )
+
+def seed_default_courses():
+    """
+    Checks if the standard courses exist. If not, creates them.
+    This runs automatically on server startup.
+    """
+    db = SessionLocal()
+    try:
+        # The specific list you provided
+        default_courses = [
+            "Quran Learning (Kayda)",
+            "Quran Reading (Nazra)",
+            "Quran Memorization",
+            "Islamic Studies"
+        ]
+        
+        print("--- Checking Default Courses ---")
+        for course_name in default_courses:
+            # Check if it exists
+            existing_course = crud.get_course_by_name(db, course_name)
+            if not existing_course:
+                print(f"Creating course: {course_name}")
+                # Create the course using the schema
+                course_data = schemas.CourseCreate(name=course_name)
+                crud.create_course(db, course_data)
+            else:
+                print(f"Course already exists: {course_name}")
+                
+    except Exception as e:
+        print(f"Error seeding courses: {e}")
+    finally:
+        db.close()
+
+
 @app.on_event("startup")
 def create_supreme_admin_on_startup():
     """Checks for and creates the supreme admin on server startup."""
