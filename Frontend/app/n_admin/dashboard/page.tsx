@@ -48,13 +48,24 @@ interface SessionAttendance {
   status: string; // student status
 }
 interface AttendanceCount {
-  teacher: { [key: string]: number };
+  teacher_by_course: {
+    [course: string]: {
+      Present?: number;
+      Absent?: number;
+      Late?: number;
+    };
+  };
   students: {
-    [key: string]: {
-      Present: number;
-      Absent: number;
-      Late: number;
-      student: Student;
+    [studentId: string]: {
+      student: {
+        id: number;
+        name: string;
+      };
+      counts: {
+        Present?: number;
+        Absent?: number;
+        Late?: number;
+      };
     };
   };
 }
@@ -265,30 +276,43 @@ function SessionAttendanceModal({
   isOpen,
   onClose,
   onSave,
+  onUpdateSchedule,
   schedule,
   classDate,
   student,
   teacher_id,
+  teacher,
   existingAttendance,
 }: {
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any) => Promise<void>;
+  onUpdateSchedule: (scheduleId: number, data: any) => Promise<void>;
   schedule: Schedule | null;
   classDate: string;
   student: Student | null;
   teacher_id: number | null;
+  teacher: Teacher | null;
   existingAttendance?: SessionAttendance | null;
 }) {
   const [teacherStatus, setTeacherStatus] = useState("Present");
   const [studentStatus, setStudentStatus] = useState("Present");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+
+  // Schedule edit fields
+  const [editSelectedDays, setEditSelectedDays] = useState<string[]>([]);
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
+  const [editZoomLink, setEditZoomLink] = useState("");
+  const [editStudentId, setEditStudentId] = useState<number | null>(null);
 
   // Check if attendance already exists
-  const isReadOnly = !!existingAttendance;
+  const hasExistingAttendance = !!existingAttendance;
+  const isReadOnly = hasExistingAttendance && !isEditMode;
 
-  // Update states when existingAttendance changes
+  // Update states when existingAttendance or schedule changes
   useEffect(() => {
     if (existingAttendance) {
       setTeacherStatus(existingAttendance.teacher_status || "Present");
@@ -297,28 +321,65 @@ function SessionAttendanceModal({
       setTeacherStatus("Present");
       setStudentStatus("Present");
     }
+    setIsEditMode(false);
   }, [existingAttendance]);
+
+  // Initialize schedule edit fields when entering edit mode
+  useEffect(() => {
+    if (isEditMode && schedule) {
+      const days = schedule.day_of_week.split(",").map((d) => d.trim());
+      setEditSelectedDays(days);
+      setEditStartTime(schedule.start_time.substring(0, 5));
+      setEditEndTime(schedule.end_time.substring(0, 5));
+      setEditZoomLink(schedule.zoom_link || "");
+      setEditStudentId(schedule.student_id);
+    }
+  }, [isEditMode, schedule]);
+
+  const toggleEditDay = (day: string) => {
+    setEditSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!schedule || !student || !teacher_id || isReadOnly) return;
+    if (!schedule || !student || !teacher_id) return;
 
     setIsLoading(true);
     setError(null);
 
-    const attendanceData = {
-      schedule_id: schedule.id,
-      class_date: classDate,
-      teacher_status: teacherStatus,
-      status: studentStatus,
-      student_id: student.id,
-      teacher_id: teacher_id,
-    };
-
     try {
-      await onSave(attendanceData);
-      setTeacherStatus("Present");
-      setStudentStatus("Present");
+      if (isEditMode) {
+        // Update schedule
+        if (editSelectedDays.length === 0) {
+          setError("Please select at least one day.");
+          setIsLoading(false);
+          return;
+        }
+        await onUpdateSchedule(schedule.id, {
+          day_of_week: editSelectedDays.join(","),
+          start_time: editStartTime,
+          end_time: editEndTime,
+          zoom_link: editZoomLink || null,
+          student_id: editStudentId,
+          teacher_id: teacher_id,
+        });
+        setIsEditMode(false);
+      } else if (!hasExistingAttendance) {
+        // Create new attendance
+        const attendanceData = {
+          schedule_id: schedule.id,
+          class_date: classDate,
+          teacher_status: teacherStatus,
+          status: studentStatus,
+          student_id: student.id,
+          teacher_id: teacher_id,
+        };
+        await onSave(attendanceData);
+        setTeacherStatus("Present");
+        setStudentStatus("Present");
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -326,19 +387,26 @@ function SessionAttendanceModal({
     }
   };
 
+  const handleClose = () => {
+    setIsEditMode(false);
+    onClose();
+  };
+
   if (!isOpen || !schedule || !student) return null;
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
             <h3 className="text-lg font-semibold">
-              {isReadOnly
-                ? "View Session Attendance"
+              {isEditMode
+                ? "Edit Schedule"
+                : isReadOnly
+                ? "View Session"
                 : "Mark Session Attendance"}
             </h3>
-            <button type="button" onClick={onClose}>
+            <button type="button" onClick={handleClose}>
               <X size={20} />
             </button>
           </div>
@@ -346,86 +414,221 @@ function SessionAttendanceModal({
             {error && (
               <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>
             )}
-            {isReadOnly && (
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm text-blue-700 dark:text-blue-300">
-                This attendance has already been recorded and cannot be changed.
-              </div>
+            
+            {isEditMode ? (
+              // Schedule Edit Form
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Student
+                  </label>
+                  <select
+                    value={editStudentId || ""}
+                    onChange={(e) => setEditStudentId(parseInt(e.target.value))}
+                    className="w-full p-2 border rounded-md"
+                  >
+                    {teacher?.students.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.first_name} {s.last_name} ({s.preferred_course})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Days of the Week *
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Sunday",
+                      "Monday",
+                      "Tuesday",
+                      "Wednesday",
+                      "Thursday",
+                      "Friday",
+                      "Saturday",
+                    ].map((day) => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleEditDay(day)}
+                        className={`px-3 py-2 border rounded-md text-sm transition-colors ${
+                          editSelectedDays.includes(day)
+                            ? "bg-primary text-white border-primary"
+                            : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        {day.substring(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      Start Time *
+                    </label>
+                    <input
+                      type="time"
+                      value={editStartTime}
+                      onChange={(e) => setEditStartTime(e.target.value)}
+                      required
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">
+                      End Time *
+                    </label>
+                    <input
+                      type="time"
+                      value={editEndTime}
+                      onChange={(e) => setEditEndTime(e.target.value)}
+                      required
+                      className="w-full p-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Zoom Link (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={editZoomLink}
+                    onChange={(e) => setEditZoomLink(e.target.value)}
+                    placeholder="https://zoom.us/j/..."
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+              </>
+            ) : (
+              // Attendance View/Mark Form
+              <>
+                {isReadOnly && (
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm text-blue-700 dark:text-blue-300">
+                    This attendance has already been recorded. Click Edit Schedule to modify the schedule.
+                  </div>
+                )}
+                <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
+                  <p className="text-sm font-semibold">
+                    {student.first_name} {student.last_name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {schedule.start_time} - {schedule.end_time}
+                  </p>
+                  <p className="text-xs text-gray-500">Date: {classDate}</p>
+                  {schedule.zoom_link && (
+                    <a
+                      href={schedule.zoom_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline"
+                    >
+                      Zoom Link
+                    </a>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Teacher Attendance *
+                  </label>
+                  <div className="flex gap-2">
+                    {["Present", "Absent", "Late"].map((status) => (
+                      <label
+                        key={`teacher-${status}`}
+                        className="flex items-center space-x-1"
+                      >
+                        <input
+                          type="radio"
+                          name="teacher-status"
+                          value={status}
+                          checked={teacherStatus === status}
+                          onChange={() => setTeacherStatus(status)}
+                          disabled={isReadOnly}
+                          className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                        <span className="text-sm">{status}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Student Attendance *
+                  </label>
+                  <div className="flex gap-2">
+                    {["Present", "Absent", "Late"].map((status) => (
+                      <label
+                        key={`student-${status}`}
+                        className="flex items-center space-x-1"
+                      >
+                        <input
+                          type="radio"
+                          name="student-status"
+                          value={status}
+                          checked={studentStatus === status}
+                          onChange={() => setStudentStatus(status)}
+                          disabled={isReadOnly}
+                          className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                        <span className="text-sm">{status}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
-              <p className="text-sm font-semibold">
-                {student.first_name} {student.last_name}
-              </p>
-              <p className="text-xs text-gray-500">
-                {schedule.start_time} - {schedule.end_time}
-              </p>
-              <p className="text-xs text-gray-500">Date: {classDate}</p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Teacher Attendance *
-              </label>
-              <div className="flex gap-2">
-                {["Present", "Absent", "Late"].map((status) => (
-                  <label
-                    key={`teacher-${status}`}
-                    className="flex items-center space-x-1"
-                  >
-                    <input
-                      type="radio"
-                      name="teacher-status"
-                      value={status}
-                      checked={teacherStatus === status}
-                      onChange={() => setTeacherStatus(status)}
-                      disabled={isReadOnly}
-                      className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-sm">{status}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Student Attendance *
-              </label>
-              <div className="flex gap-2">
-                {["Present", "Absent", "Late"].map((status) => (
-                  <label
-                    key={`student-${status}`}
-                    className="flex items-center space-x-1"
-                  >
-                    <input
-                      type="radio"
-                      name="student-status"
-                      value={status}
-                      checked={studentStatus === status}
-                      onChange={() => setStudentStatus(status)}
-                      disabled={isReadOnly}
-                      className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-sm">{status}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
           <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100"
-            >
-              Close
-            </button>
-            {!isReadOnly && (
+            {isEditMode && (
+              <button
+                type="button"
+                onClick={() => setIsEditMode(false)}
+                className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+            )}
+            {!isEditMode && (
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100"
+              >
+                Close
+              </button>
+            )}
+            {isReadOnly && (
+              <button
+                type="button"
+                onClick={() => setIsEditMode(true)}
+                className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Edit Schedule
+              </button>
+            )}
+            {!isReadOnly && !isEditMode && (
               <button
                 type="submit"
                 disabled={isLoading}
                 className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
               >
                 {isLoading ? "Saving..." : "Save Attendance"}
+              </button>
+            )}
+            {isEditMode && (
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isLoading ? "Updating..." : "Update Schedule"}
               </button>
             )}
           </div>
@@ -710,26 +913,26 @@ export default function NormalAdminDashboard() {
     fetchData();
   }, []);
 
-  useEffect(() => {
-    if (!openTeacherId || !selectedDate) return;
+  // useEffect(() => {
+  //   if (!openTeacherId || !selectedDate) return;
 
-    const fetchAttendance = async () => {
-      const response = await fetch(
-        `/api/admin/attendance/?teacher_id=${openTeacherId}&class_date=${selectedDate}`,
-        { credentials: "include" }
-      );
-      if (response.ok) {
-        const data: AttendanceRecord[] = await response.json();
-        setExistingAttendance(data);
-        const initialAttendance = data.reduce((acc, record) => {
-          acc[record.student_id] = record.status;
-          return acc;
-        }, {} as Record<number, string>);
-        setAttendance(initialAttendance);
-      }
-    };
-    fetchAttendance();
-  }, [openTeacherId, selectedDate]);
+  //   const fetchAttendance = async () => {
+  //     const response = await fetch(
+  //       `/api/admin/attendance/?teacher_id=${openTeacherId}&class_date=${selectedDate}`,
+  //       { credentials: "include" }
+  //     );
+  //     if (response.ok) {
+  //       const data: AttendanceRecord[] = await response.json();
+  //       setExistingAttendance(data);
+  //       const initialAttendance = data.reduce((acc, record) => {
+  //         acc[record.student_id] = record.status;
+  //         return acc;
+  //       }, {} as Record<number, string>);
+  //       setAttendance(initialAttendance);
+  //     }
+  //   };
+  //   fetchAttendance();
+  // }, [openTeacherId, selectedDate]);
 
   const sortedAndFilteredTeachers = useMemo(() => {
     let processedTeachers = [...teachers];
@@ -908,6 +1111,27 @@ export default function NormalAdminDashboard() {
         fetchAttendanceCount(openTeacherId, selectedMonth);
       }
     }
+  };
+
+  const handleUpdateSchedule = async (scheduleId: number, updateData: any) => {
+    const response = await fetch(
+      `/api/admin/schedules/${scheduleId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(updateData),
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || "Failed to update schedule.");
+    }
+    alert("Schedule updated successfully!");
+    setIsSessionAttendanceModalOpen(false);
+    
+    // Re-fetch all data to show the updated schedule
+    await fetchData();
   };
 
   if (isLoading) return <div className="p-10">Loading teacher data...</div>;
@@ -1099,69 +1323,84 @@ export default function NormalAdminDashboard() {
                       <p className="text-sm text-gray-500">
                         Loading attendance data...
                       </p>
-                    ) : attendanceCount ? (
+                    ) : attendanceCount &&
+                      (Object.keys(attendanceCount.teacher_by_course || {}).length > 0 ||
+                        Object.keys(attendanceCount.students || {}).length > 0) ? (
                       <div className="space-y-4">
-                        {/* Teacher Attendance */}
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded">
-                          <h5 className="font-semibold text-sm mb-2">
-                            {teacher.name} (Teacher)
-                          </h5>
-                          <div className="grid grid-cols-3 gap-2 text-sm">
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300">
-                                Present:
-                              </span>
-                              <p className="font-bold text-green-600">
-                                {attendanceCount.teacher.Present || 0}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300">
-                                Absent:
-                              </span>
-                              <p className="font-bold text-red-600">
-                                {attendanceCount.teacher.Absent || 0}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300">
-                                Late:
-                              </span>
-                              <p className="font-bold text-yellow-600">
-                                {attendanceCount.teacher.Late || 0}
-                              </p>
+                        {/* Teacher Attendance by Course */}
+                        {Object.keys(attendanceCount.teacher_by_course || {}).length > 0 && (
+                          <div>
+                            <h5 className="font-semibold text-sm mb-2">Teacher Attendance</h5>
+                            <div className="space-y-2">
+                              {Object.entries(attendanceCount.teacher_by_course).map(
+                                ([course, counts]) => (
+                                  <div
+                                    key={course}
+                                    className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded"
+                                  >
+                                    <p className="font-medium text-sm mb-1">{course}</p>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                      <div>
+                                        <span className="text-gray-600 dark:text-gray-300">
+                                          Present:
+                                        </span>
+                                        <p className="font-bold text-green-600">
+                                          {counts.Present || 0}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-600 dark:text-gray-300">
+                                          Absent:
+                                        </span>
+                                        <p className="font-bold text-red-600">
+                                          {counts.Absent || 0}
+                                        </p>
+                                      </div>
+                                      <div>
+                                        <span className="text-gray-600 dark:text-gray-300">
+                                          Late:
+                                        </span>
+                                        <p className="font-bold text-yellow-600">
+                                          {counts.Late || 0}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              )}
                             </div>
                           </div>
-                        </div>
+                        )}
 
                         {/* Students Attendance */}
-                        <div className="space-y-2">
-                          <h5 className="font-semibold text-sm">Students</h5>
-                          {Object.entries(attendanceCount.students).map(
-                            ([key, counts]) => (
-                              <div
-                                key={key}
-                                className="p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm"
-                              >
-                                <p className="font-medium">
-                                  {counts.student.first_name}{" "}
-                                  {counts.student.last_name}
-                                </p>
-                                <div className="grid grid-cols-3 gap-2 mt-1 text-xs">
-                                  <span className="text-green-600">
-                                    Present: {counts.Present}
-                                  </span>
-                                  <span className="text-red-600">
-                                    Absent: {counts.Absent}
-                                  </span>
-                                  <span className="text-yellow-600">
-                                    Late: {counts.Late}
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
+                        {Object.keys(attendanceCount.students || {}).length > 0 && (
+                          <div>
+                            <h5 className="font-semibold text-sm mb-2">Students Attendance</h5>
+                            <div className="space-y-2">
+                              {Object.entries(attendanceCount.students).map(
+                                ([studentId, data]) => (
+                                  <div
+                                    key={studentId}
+                                    className="p-2 bg-gray-50 dark:bg-gray-700 rounded text-sm"
+                                  >
+                                    <p className="font-medium">{data.student.name}</p>
+                                    <div className="grid grid-cols-3 gap-2 mt-1 text-xs">
+                                      <span className="text-green-600">
+                                        Present: {data.counts.Present || 0}
+                                      </span>
+                                      <span className="text-red-600">
+                                        Absent: {data.counts.Absent || 0}
+                                      </span>
+                                      <span className="text-yellow-600">
+                                        Late: {data.counts.Late || 0}
+                                      </span>
+                                    </div>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-sm text-gray-500">
@@ -1199,10 +1438,12 @@ export default function NormalAdminDashboard() {
         isOpen={isSessionAttendanceModalOpen}
         onClose={() => setIsSessionAttendanceModalOpen(false)}
         onSave={handleSaveSessionAttendance}
+        onUpdateSchedule={handleUpdateSchedule}
         schedule={selectedSchedule}
         classDate={selectedSessionDate}
         student={selectedStudent}
         teacher_id={openTeacherId}
+        teacher={selectedTeacher || teachers.find(t => t.id === openTeacherId) || null}
         existingAttendance={existingSessionAttendance}
       />
     </div>
