@@ -268,7 +268,7 @@ def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month
         models.Attendance.class_date>=first, 
         models.Attendance.class_date<=last
     ).options(
-        joinedload(models.Attendance.student).joinedload(models.Student.course)
+        joinedload(models.Attendance.student).joinedload(models.Application.course)
     ).all()
     
     course_counts = {}
