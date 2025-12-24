@@ -268,7 +268,7 @@ def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month
         models.Attendance.class_date>=first, 
         models.Attendance.class_date<=last
     ).options(
-        joinedload(models.Attendance.student).joinedload(models.Application.course)
+        joinedload(models.Attendance.student).joinedload(models.Student.course)
     ).all()
     
     course_counts = {}
@@ -280,7 +280,7 @@ def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month
         c_name = "Unknown"
         if r.student:
             if r.student.course:
-                c_name = r.student.course.name
+                c_name = r.student.course[0].name
             elif r.student.preferred_course:
                 c_name = r.student.preferred_course
             
@@ -298,7 +298,12 @@ def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month
         # Student Stats (For detailed history)
         s_key = f"{r.student_id}"
         if s_key not in student_counts:
-            student_counts[s_key] = {"student": r.student, "counts": {}}
+            #student_counts[s_key] = {"student": r.student, "counts": {}}
+            student_data ={
+                "id": r.student.id,
+                "name": r.student.name,
+            }
+            student_counts[s_key]={"student": student_data, "counts":{}}
         if r.status:
             student_counts[s_key]["counts"][r.status] = student_counts[s_key]["counts"].get(r.status, 0) + 1
             
