@@ -299,9 +299,12 @@ def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month
         s_key = f"{r.student_id}"
         if s_key not in student_counts:
             #student_counts[s_key] = {"student": r.student, "counts": {}}
+            f_name= r.student.first_name
+            l_name= r.student.last_name
+            full_name= f"{f_name} {l_name}"
             student_data ={
                 "id": r.student.id,
-                "name": r.student.name,
+                "name": full_name,
             }
             student_counts[s_key]={"student": student_data, "counts":{}}
         if r.status:
