@@ -4,6 +4,17 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 // Helper to set a cookie
 function setCookie(name: string, value: string, days: number) {
@@ -28,6 +39,11 @@ export default function AdminLoginPage() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [forgotEmail, setForgotEmail] = useState('');
+    const [forgotError, setForgotError] = useState<string | null>(null);
+    const [forgotSuccess, setForgotSuccess] = useState(false);
+    const [isForgotLoading, setIsForgotLoading] = useState(false);
     const router = useRouter();
 
     const handleSubmit = async (event: FormEvent) => {
@@ -84,6 +100,47 @@ export default function AdminLoginPage() {
         }
     };
 
+    const handleForgotPassword = async () => {
+        if (!forgotEmail || !forgotEmail.includes('@')) {
+            setForgotError('Please enter a valid email address.');
+            return;
+        }
+
+        setIsForgotLoading(true);
+        setForgotError(null);
+        setForgotSuccess(false);
+
+        try {
+            const response = await fetch('/api/forgot-pass', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: forgotEmail }),
+            });
+
+            if (response.ok) {
+                setForgotSuccess(true);
+                setForgotEmail('');
+            } else {
+                const errorData = await response.json();
+                setForgotError(errorData.detail || 'Failed to send password reset request.');
+            }
+        } catch (error) {
+            // console.error('Forgot password request failed:', error);
+            setForgotError('Could not connect to the server. Please try again.');
+        } finally {
+            setIsForgotLoading(false);
+        }
+    };
+
+    const handleCloseForgotDialog = () => {
+        setShowForgotPassword(false);
+        setForgotEmail('');
+        setForgotError(null);
+        setForgotSuccess(false);
+    };
+
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
             <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg dark:bg-gray-800">
@@ -109,7 +166,80 @@ export default function AdminLoginPage() {
                             {!isLoading && <LogIn className="w-5 h-5 ml-2" />}
                         </button>
                     </div>
+                    <div className="text-center">
+                        <button
+                            type="button"
+                            onClick={() => setShowForgotPassword(true)}
+                            className="text-sm text-primary hover:underline"
+                        >
+                            Forgot password?
+                        </button>
+                    </div>
                 </form>
+
+                {/* Forgot Password Dialog */}
+                <Dialog open={showForgotPassword} onOpenChange={handleCloseForgotDialog}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Reset Password</DialogTitle>
+                            <DialogDescription>
+                                Enter your email address and we'll send you instructions to reset your password.
+                            </DialogDescription>
+                        </DialogHeader>
+                        
+                        {!forgotSuccess ? (
+                            <>
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="forgot-email">Email Address</Label>
+                                        <Input
+                                            id="forgot-email"
+                                            type="email"
+                                            placeholder="you@example.com"
+                                            value={forgotEmail}
+                                            onChange={(e) => setForgotEmail(e.target.value)}
+                                            disabled={isForgotLoading}
+                                        />
+                                    </div>
+                                    {forgotError && (
+                                        <div className="flex items-center p-3 text-sm text-red-700 bg-red-100 rounded-lg">
+                                            <AlertCircle className="w-5 h-5 mr-2" />
+                                            <span>{forgotError}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        variant="outline"
+                                        onClick={handleCloseForgotDialog}
+                                        disabled={isForgotLoading}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        onClick={handleForgotPassword}
+                                        disabled={isForgotLoading}
+                                    >
+                                        {isForgotLoading ? 'Sending...' : 'Send Reset Link'}
+                                    </Button>
+                                </DialogFooter>
+                            </>
+                        ) : (
+                            <>
+                                <div className="py-4">
+                                    <div className="flex items-center p-4 text-sm text-green-700 bg-green-100 rounded-lg">
+                                        <span>Request has been sent. Please follow the instructions sent to your email address.</span>
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button onClick={handleCloseForgotDialog}>
+                                        Close
+                                    </Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );
