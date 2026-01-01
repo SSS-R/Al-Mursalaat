@@ -1144,6 +1144,8 @@ export default function HomePage() {
                         name="preferred_course"
                         required
                         className="w-full p-2 border border-gray-300 rounded-md transition-all duration-300 focus:scale-105 focus:shadow-lg"
+                        value={selectedCourse}
+                        onChange={e=>setSelectedCourse(e.target.value)}
                       >
                         <option value="">Select a course</option>
                         <option value="Quran Learning (Kayda)">
