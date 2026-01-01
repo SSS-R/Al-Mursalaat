@@ -161,3 +161,30 @@ def send_teacher_credentials_email(teacher_data: dict, temp_password: str):
         print(f"Teacher credentials email sent to {teacher_email}. Response: {api_response}")
     except ApiException as e:
         print(f"Error sending teacher credentials email: {e}")
+
+def send_forgot_password_email(email: str, temp_password: str):
+    """Sends a temporary password to a user who forgot theirs."""
+    if not BREVO_API_KEY:
+        print("ERROR: BREVO_API_KEY not found.")
+        return
+
+    subject = 'Password Reset - Al-Mursalaat'
+    html_content = f"""
+    <h3>Password Reset Request</h3>
+    <p>We received a request to reset your password for Al-Mursalaat.</p>
+    <p>Your new <strong>Temporary Password</strong> is: <span style="font-size: 18px; color: #2d89ef;">{temp_password}</span></p>
+    <p>Please log in and change this password immediately in your profile settings.</p>
+    <br>
+    <p>If you did not request this, please contact support.</p>
+    """
+
+    sender = {"name": FROM_NAME, "email": FROM_EMAIL}
+    to = [{"email": email}]
+    
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, sender=sender, subject=subject, html_content=html_content)
+
+    try:
+        api_instance.send_transac_email(send_smtp_email)
+        print(f"Forgot password email sent to {email}")
+    except ApiException as e:
+        print(f"Error sending forgot password email: {e}")

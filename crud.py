@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 import models
 import schemas
 from datetime import datetime, date
+import secrets, string
 
 # CRUD (Create, Read, Update, Delete) functions interact directly with the database.
 
@@ -311,3 +312,26 @@ def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month
             student_counts[s_key]["counts"][r.status] = student_counts[s_key]["counts"].get(r.status, 0) + 1
             
     return {"teacher_by_course": course_counts, "students": student_counts}
+
+def reset_user_password(db: Session, email: str):
+    """
+    Checks both users and teachers for the email, generates a 
+    temp password, hashes it, saves it, and returns the plain password.
+    """
+    # 1. Look for user in both tables (using your existing function)
+    user = get_user_or_teacher_by_email(db, email=email)
+    
+    if not user:
+        return None, None
+
+    # 2. Generate a secure random temporary password
+    alphabet = string.ascii_letters + string.digits
+    temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
+    
+    # 3. Hash and Save (using your existing update_password logic)
+    # Note: user might be models.User or models.Teacher, both have hashed_password
+    user.hashed_password = get_password_hash(temp_password)
+    db.commit()
+    db.refresh(user)
+    
+    return temp_password, user

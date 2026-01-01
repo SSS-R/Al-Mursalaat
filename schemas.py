@@ -165,7 +165,13 @@ class StudentAssign(BaseModel):
 class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str
+
+class FrogetPasswordRequest(BaseModel):
+    email:EmailStr
+
 # --- Resolve Forward References ---
+
+
 # This is a crucial step that allows the schemas to refer to each other.
 Application.model_rebuild()
 TeacherWithStudents.model_rebuild()

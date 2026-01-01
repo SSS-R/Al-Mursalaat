@@ -254,6 +254,31 @@ def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin
     crud.delete_user(db=db, user_id=user_id)
     return user_to_delete
 
+@app.post("/api/forgot-pass")
+async def forgot_password(
+    request_data: schemas.ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
+):
+    """
+    Checks if email exists, generates temp pass, and sends email.
+    """
+    email = request_data.email
+    
+    # Reset in DB
+    temp_password, user_obj = crud.reset_user_password(db, email=email)
+    
+    if not user_obj:
+        # For security, you might want to return 200 anyway, 
+        # but your frontend expects error details.
+        raise HTTPException(status_code=404, detail="Email not found in our records.")
+
+    # Send Email in background so the user doesn't wait for the SMTP server
+    background_tasks.add_task(email_sender.send_forgot_password_email, email=email, temp_password=temp_password)
+    
+    return {"message": "If this email exists, a temporary password has been sent."}
+
+
 @app.post("/api/admin/users/me/change-password")
 def change_current_user_password(
     password_data: schemas.PasswordUpdate,
@@ -582,3 +607,5 @@ def create_course(
     if crud.get_course_by_name(db, course.name):
         raise HTTPException(status_code=400, detail="Course already exists")
     return crud.create_course(db, course)
+
+
