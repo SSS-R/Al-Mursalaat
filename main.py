@@ -256,7 +256,7 @@ def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin
 
 @app.post("/api/forgot-pass")
 async def forgot_password(
-    request_data: schemas.ForgotPasswordRequest,
+    request_data: schemas.ForgetPasswordRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
