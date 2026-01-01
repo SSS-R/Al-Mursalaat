@@ -265,7 +265,7 @@ function TermsModal({
 }
 
 export default function HomePage() {
-  // State for Counters (from your code)
+  // State for Counters
   const [studentsRef, studentsInView] = useInView();
   const [teachersRef, teachersInView] = useInView();
   const [experienceRef, experienceInView] = useInView();
@@ -285,6 +285,27 @@ export default function HomePage() {
     if (experienceInView) setExperienceVisible(true);
   }, [experienceInView, setExperienceVisible]);
 
+  // State to track which course is selected
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
+
+// Function to handle "Enroll Now" clicks
+  const handleEnrollClick = (courseTitle: string) => {
+  let value = "";
+  // Map the display title to the dropdown value
+  if (courseTitle.includes("Kayda")) value = "Quran Learning (Kayda)";
+  else if (courseTitle.includes("Nazra")) value = "Quran Reading (Nazra)";
+  else if (courseTitle.includes("Memorization") || courseTitle.includes("Hifz")) value = "Quran Memorization (Hifz)";
+  else if (courseTitle.includes("Islamic")) value = "Islamic Studies";
+  
+  setSelectedCourse(value);
+  
+  // Smooth scroll to the admission form
+  const admissionSection = document.getElementById('admission');
+  if (admissionSection) {
+    admissionSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+  
   // --- NEW: State for Form and Modal ---
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{
@@ -612,7 +633,7 @@ export default function HomePage() {
               },
               {
                 badge: "Advanced",
-                title: "Quran Memorization",
+                title: "Quran Memorization (Hifz)",
                 desc: "Memorize the Holy Quran with expert guidance",
                 price: "$80",
                 badgeColor: "bg-accent",
@@ -657,7 +678,10 @@ export default function HomePage() {
                     </span>
                     {/* Update all "Enroll Now" buttons in the courses section to link to admission */}
                     <Link href="#admission">
-                      <Button className="bg-primary hover:bg-primary/90 transform transition-all duration-300 hover:scale-110 hover:shadow-lg">
+                      <Button 
+                        onClick={() => handleEnrollClick(course.title)}
+                        className="bg-primary hover:bg-primary/90 transform transition-all duration-300 hover:scale-110 hover:shadow-lg"
+                      >
                         Enroll Now
                       </Button>
                     </Link>
@@ -1128,8 +1152,8 @@ export default function HomePage() {
                         <option value="Quran Reading (Nazra)">
                           Quran Reading (Nazra)
                         </option>
-                        <option value="Quran Memorization">
-                          Quran Memorization
+                        <option value="Quran Memorization (Hifz)">
+                          Quran Memorization (Hifz)
                         </option>
                       </select>
                     </div>
@@ -1298,7 +1322,7 @@ export default function HomePage() {
                 links: [
                   "Quran Reading (Nazra)",
                   "Quran Learning (Kayda)",
-                  "Quran Memorization",
+                  "Quran Memorization (Hifz)",
                   "Islamic Studies",
                 ],
               },

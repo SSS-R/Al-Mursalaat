@@ -188,3 +188,41 @@ def send_forgot_password_email(email: str, temp_password: str):
         print(f"Forgot password email sent to {email}")
     except ApiException as e:
         print(f"Error sending forgot password email: {e}")
+
+def send_manual_admission_email(student_data: dict):
+    """Sends a welcome email to a student added manually by the admin."""
+    if not BREVO_API_KEY:
+        print("ERROR: BREVO_API_KEY not found. Cannot send email.")
+        return
+
+    student_email = student_data.get('email')
+    student_name = student_data.get('first_name', 'Student')
+    course_name = student_data.get('preferred_course', 'Selected Course')
+
+    subject = 'Welcome to Al-Mursalaat - Admission Confirmed!'
+    html_content = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #2c3e50; text-align: center;">Welcome to Al-Mursalaat</h2>
+        <p>Assalamu Alaikum, {student_name}!</p>
+        <p>We are pleased to inform you that your admission to <strong>Al-Mursalaat Online</strong> has been confirmed.</p>
+        <div style="background: #f4fbf4; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745; margin: 20px 0;">
+            <p style="margin: 0;"><strong>Course:</strong> {course_name}</p>
+            <p style="margin: 5px 0 0 0;"><strong>Status:</strong> Admitted & Enrolled</p>
+        </div>
+        <p>Our team will contact you shortly to provide your class schedule and link you with your teacher.</p>
+        <p>If you have any questions, feel free to reply directly to this email.</p>
+        <br>
+        <p>JazakAllah Khair,<br><strong>The Al-Mursalaat Team</strong></p>
+    </div>
+    """
+
+    sender = {"name": FROM_NAME, "email": FROM_EMAIL}
+    to = [{"email": student_email, "name": student_name}]
+    
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(to=to, sender=sender, subject=subject, html_content=html_content)
+
+    try:
+        api_instance.send_transac_email(send_smtp_email)
+        print(f"Manual admission email sent to {student_email}")
+    except ApiException as e:
+        print(f"Error sending manual admission email: {e}")

@@ -50,7 +50,7 @@ def seed_default_courses():
         default_courses = [
             "Quran Learning (Kayda)",
             "Quran Reading (Nazra)",
-            "Quran Memorization",
+            "Quran Memorization (Hifz)",
             "Islamic Studies"
         ]
         
@@ -416,11 +416,28 @@ def read_students(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)
     return students
 
 @app.post("/api/admin/add-student/", response_model=schemas.Application, status_code=201)
-def add_student_by_admin(application: schemas.ApplicationCreate, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+def add_student_by_admin(
+    application: schemas.ApplicationCreate, 
+    background_tasks: BackgroundTasks,  # Add this
+    db: Session = Depends(get_db), 
+    current_admin: dict = Depends(get_current_admin)
+):
+    # Check if email already exists
     db_application = crud.get_application_by_email(db, email=application.email)
     if db_application:
         raise HTTPException(status_code=400, detail="A student with this email address already exists.")
+    
+    # Save the student to the database
     new_student = crud.create_application(db=db, application=application)
+    
+    # Send the "Admitted" email in the background
+    student_dict = {
+        "email": new_student.email,
+        "first_name": new_student.first_name,
+        "preferred_course": new_student.preferred_course
+    }
+    background_tasks.add_task(email_sender.send_manual_admission_email, student_data=student_dict)
+    
     return new_student
 
 @app.patch("/api/admin/students/{student_id}/assign", response_model=schemas.Application)

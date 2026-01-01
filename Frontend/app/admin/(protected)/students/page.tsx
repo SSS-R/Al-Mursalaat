@@ -575,7 +575,7 @@ function StudentsPage() {
   ];
   const courses = [
     "Quran Reading (Nazra)",
-    "Quran Memorization",
+    "Quran Memorization (Hifz)",
     "Quran Learning (Kayda)",
     "Advanced Tajweed",
   ];
