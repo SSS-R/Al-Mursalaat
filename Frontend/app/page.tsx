@@ -495,7 +495,7 @@ export default function HomePage() {
                     className="text-center transform transition-all duration-300 hover:scale-110"
                     ref={teachersRef}
                   >
-                    <div className="text-2xl font-bold drop-shadow-lg">
+                    <div className="tedxt-2xl font-bold drop-shadow-lg">
                       {teachersCount}+
                     </div>
                     <div className="text-sm text-green-200">
@@ -1144,6 +1144,8 @@ export default function HomePage() {
                         name="preferred_course"
                         required
                         className="w-full p-2 border border-gray-300 rounded-md transition-all duration-300 focus:scale-105 focus:shadow-lg"
+                        value={selectedCourse}
+                        onChange={e=>setSelectedCourse(e.value)}
                       >
                         <option value="">Select a course</option>
                         <option value="Quran Learning (Kayda)">
