@@ -166,7 +166,7 @@ class PasswordUpdate(BaseModel):
     current_password: str
     new_password: str
 
-class FrogetPasswordRequest(BaseModel):
+class ForgetPasswordRequest(BaseModel):
     email:EmailStr
 
 # --- Resolve Forward References ---
