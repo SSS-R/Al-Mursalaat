@@ -251,6 +251,23 @@ def get_session_attendance_by_schedule_and_date(db: Session, schedule_id: int, c
         models.Attendance.class_date == class_date
     ).first()
 
+def update_attendance(db: Session, attendance_id: int, teacher_status: str = None, student_status: str = None):
+    """
+    Updates an existing attendance record. Only provided fields are updated.
+    """
+    db_attendance = db.query(models.Attendance).filter(models.Attendance.id == attendance_id).first()
+    if not db_attendance:
+        return None
+    
+    if teacher_status is not None:
+        db_attendance.teacher_status = teacher_status
+    if student_status is not None:
+        db_attendance.status = student_status
+        
+    db.commit()
+    db.refresh(db_attendance)
+    return db_attendance
+
 def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month: int):
     """
     Groups attendance by COURSE NAME.

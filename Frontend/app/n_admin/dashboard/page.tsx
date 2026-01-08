@@ -283,6 +283,8 @@ function SessionAttendanceModal({
   teacher_id,
   teacher,
   existingAttendance,
+  selectedMonth,
+  onAttendanceUpdated,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -294,12 +296,15 @@ function SessionAttendanceModal({
   teacher_id: number | null;
   teacher: Teacher | null;
   existingAttendance?: SessionAttendance | null;
+  selectedMonth?: string;
+  onAttendanceUpdated?: (classDate: string) => Promise<void>;
 }) {
   const [teacherStatus, setTeacherStatus] = useState("Present");
   const [studentStatus, setStudentStatus] = useState("Present");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditAttendanceMode, setIsEditAttendanceMode] = useState(false);
 
   // Schedule edit fields
   const [editSelectedDays, setEditSelectedDays] = useState<string[]>([]);
@@ -310,7 +315,7 @@ function SessionAttendanceModal({
 
   // Check if attendance already exists
   const hasExistingAttendance = !!existingAttendance;
-  const isReadOnly = hasExistingAttendance && !isEditMode;
+  const isReadOnly = hasExistingAttendance && !isEditAttendanceMode;
 
   // Update states when existingAttendance or schedule changes
   useEffect(() => {
@@ -366,6 +371,36 @@ function SessionAttendanceModal({
           teacher_id: teacher_id,
         });
         setIsEditMode(false);
+      } else if (isEditAttendanceMode && existingAttendance) {
+        // Update existing attendance
+        const response = await fetch(
+          `/api/admin/session-attendance/${existingAttendance.id}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              teacher_status: teacherStatus,
+              status: studentStatus,
+            }),
+          }
+        );
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || "Failed to update attendance.");
+        }
+        alert("Attendance updated successfully!");
+        setIsEditAttendanceMode(false);
+        
+        // Refresh attendance count if callback is provided
+        if (onAttendanceUpdated && selectedMonth) {
+          const attendanceMonth = classDate.slice(0, 7); // Extract YYYY-MM
+          if (attendanceMonth === selectedMonth) {
+            await onAttendanceUpdated(classDate);
+          }
+        }
+        
+        onClose();
       } else if (!hasExistingAttendance) {
         // Create new attendance
         const attendanceData = {
@@ -389,6 +424,7 @@ function SessionAttendanceModal({
 
   const handleClose = () => {
     setIsEditMode(false);
+    setIsEditAttendanceMode(false);
     onClose();
   };
 
@@ -402,6 +438,8 @@ function SessionAttendanceModal({
             <h3 className="text-lg font-semibold">
               {isEditMode
                 ? "Edit Schedule"
+                : isEditAttendanceMode
+                ? "Edit Attendance"
                 : isReadOnly
                 ? "View Session"
                 : "Mark Session Attendance"}
@@ -510,7 +548,7 @@ function SessionAttendanceModal({
               <>
                 {isReadOnly && (
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-sm text-blue-700 dark:text-blue-300">
-                    This attendance has already been recorded. Click Edit Schedule to modify the schedule.
+                    ⚠️ This attendance has already been recorded. You can edit it below or modify the schedule.
                   </div>
                 )}
                 <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded">
@@ -549,7 +587,7 @@ function SessionAttendanceModal({
                           value={status}
                           checked={teacherStatus === status}
                           onChange={() => setTeacherStatus(status)}
-                          disabled={isReadOnly}
+                          disabled={isReadOnly && !isEditAttendanceMode}
                           className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <span className="text-sm">{status}</span>
@@ -574,7 +612,7 @@ function SessionAttendanceModal({
                           value={status}
                           checked={studentStatus === status}
                           onChange={() => setStudentStatus(status)}
-                          disabled={isReadOnly}
+                          disabled={isReadOnly && !isEditAttendanceMode}
                           className="w-4 h-4 disabled:opacity-50 disabled:cursor-not-allowed"
                         />
                         <span className="text-sm">{status}</span>
@@ -585,26 +623,47 @@ function SessionAttendanceModal({
               </>
             )}
           </div>
-          <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
-            {isEditMode && (
+          <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700 gap-2 flex-wrap">
+            {(isEditMode || isEditAttendanceMode) && (
               <button
                 type="button"
-                onClick={() => setIsEditMode(false)}
-                className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100"
+                onClick={() => {
+                  setIsEditMode(false);
+                  setIsEditAttendanceMode(false);
+                }}
+                className="px-4 py-2 text-sm bg-white border rounded-md hover:bg-gray-100"
               >
                 Cancel
               </button>
             )}
-            {!isEditMode && (
+            {!isEditMode && !isEditAttendanceMode && (
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100"
+                className="px-4 py-2 text-sm bg-white border rounded-md hover:bg-gray-100"
               >
                 Close
               </button>
             )}
-            {isReadOnly && (
+            {isReadOnly && !isEditAttendanceMode && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsEditAttendanceMode(true)}
+                  className="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700"
+                >
+                  Edit Attendance
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditMode(true)}
+                  className="px-4 py-2 text-sm text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                >
+                  Edit Schedule
+                </button>
+              </>
+            )}
+            {!hasExistingAttendance && !isEditMode && !isEditAttendanceMode && (
               <button
                 type="button"
                 onClick={() => setIsEditMode(true)}
@@ -613,7 +672,7 @@ function SessionAttendanceModal({
                 Edit Schedule
               </button>
             )}
-            {!isReadOnly && !isEditMode && (
+            {!isReadOnly && !isEditMode && !isEditAttendanceMode && (
               <button
                 type="submit"
                 disabled={isLoading}
@@ -629,6 +688,15 @@ function SessionAttendanceModal({
                 className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
               >
                 {isLoading ? "Updating..." : "Update Schedule"}
+              </button>
+            )}
+            {isEditAttendanceMode && (
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
+              >
+                {isLoading ? "Saving..." : "Save Attendance"}
               </button>
             )}
           </div>
@@ -1445,6 +1513,12 @@ export default function NormalAdminDashboard() {
         teacher_id={openTeacherId}
         teacher={selectedTeacher || teachers.find(t => t.id === openTeacherId) || null}
         existingAttendance={existingSessionAttendance}
+        selectedMonth={selectedMonth}
+        onAttendanceUpdated={async () => {
+          if (openTeacherId) {
+            await fetchAttendanceCount(openTeacherId, selectedMonth);
+          }
+        }}
       />
     </div>
   );
