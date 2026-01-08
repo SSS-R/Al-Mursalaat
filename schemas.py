@@ -98,6 +98,11 @@ class AttendanceBase(BaseModel):
 class AttendanceCreate(AttendanceBase):
     pass
 
+class AttendanceUpdate(BaseModel):
+    status: Optional[str] = None
+    teacher_status: Optional[str] = None
+    notes: Optional[str] = None
+
 class Attendance(AttendanceBase):
     id: int
     created_at: datetime

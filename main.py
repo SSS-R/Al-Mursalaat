@@ -578,6 +578,25 @@ def create_session_attendance(
     
     return crud.create_attendance_record(db=db, attendance=attendance)
 
+@app.patch("/api/admin/session-attendance/{attendance_id}", response_model=schemas.Attendance)
+def update_session_attendance(
+    attendance_id: int,
+    attendance_update: schemas.AttendanceUpdate,
+    db: Session = Depends(get_db),
+    current_admin: models.User = Depends(get_current_admin)
+):
+    """Updates an existing session attendance record."""
+    db_attendance = db.query(models.Attendance).filter(models.Attendance.id == attendance_id).first()
+    if not db_attendance:
+        raise HTTPException(status_code=404, detail="Attendance record not found.")
+    
+    return crud.update_attendance(
+        db=db, 
+        attendance_id=attendance_id,
+        teacher_status=attendance_update.teacher_status,
+        student_status=attendance_update.status
+    )
+
 @app.get("/api/admin/attendance-count/", response_model=schemas.AttendanceStats)
 def get_attendance_count(
     teacher_id: int, year: int, month: int, 
