@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { UserPlus, Trash2, X } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 // --- Types ---
 interface AdminUser {
@@ -59,11 +60,11 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
                         {error && <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>}
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium">Full Name *</label>
-                            <input type="text" name="name" id="name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/>
+                            <input type="text" name="name" id="name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium">Email Address *</label>
-                            <input type="email" name="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/>
+                            <input type="email" name="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                         {/* New Gender Field */}
                         <div>
@@ -76,7 +77,7 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
                         </div>
                         <div>
                             <label htmlFor="phone" className="block text-sm font-medium">Phone Number *</label>
-                            <input type="tel" name="phone" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/>
+                            <input type="tel" name="phone" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                         <div className="flex items-center">
                             <input type="checkbox" id="whatsapp-check" checked={isWhatsappDifferent} onChange={(e) => setIsWhatsappDifferent(e.target.checked)} className="h-4 w-4 rounded" />
@@ -85,7 +86,7 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
                         {isWhatsappDifferent && (
                             <div>
                                 <label htmlFor="whatsapp" className="block text-sm font-medium">WhatsApp Number *</label>
-                                <input type="tel" name="whatsapp" id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"/>
+                                <input type="tel" name="whatsapp" id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                             </div>
                         )}
                     </div>
@@ -111,9 +112,7 @@ export default function AdminManagementPage() {
     const fetchAdmins = async () => {
         setIsLoading(true);
         try {
-            const response = await fetch('/api/admin/users/', { credentials: 'include' });
-            if (!response.ok) throw new Error('Failed to fetch admins.');
-            const data: AdminUser[] = await response.json();
+            const data = await apiFetch<AdminUser[]>('/api/admin/users/');
             setAdmins(data);
         } catch (err: any) {
             setError(err.message);
@@ -127,17 +126,10 @@ export default function AdminManagementPage() {
     }, []);
 
     const handleSaveAdmin = async (adminData: any) => {
-        const response = await fetch('/api/admin/create-admin/', {
+        await apiFetch('/api/admin/create-admin/', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
             body: JSON.stringify(adminData),
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.detail || 'Failed to create admin.');
-        }
 
         setIsModalOpen(false);
         fetchAdmins();
@@ -148,14 +140,10 @@ export default function AdminManagementPage() {
             return;
         }
         try {
-            const response = await fetch(`/api/admin/users/${userId}`, {
+            await apiFetch(`/api/admin/users/${userId}`, {
                 method: 'DELETE',
-                credentials: 'include',
             });
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.detail || 'Failed to delete admin.');
-            }
+
             alert('Admin deleted successfully.');
             setAdmins(currentAdmins => currentAdmins.filter(admin => admin.id !== userId));
         } catch (err: any) {
@@ -168,55 +156,55 @@ export default function AdminManagementPage() {
 
     return (
         <Suspense>
-        <div className="p-6 sm:p-10">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold">Admin Management</h1>
-                    <p className="mt-2 text-gray-500">Add, view, and manage other admins.</p>
+            <div className="p-6 sm:p-10">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold">Admin Management</h1>
+                        <p className="mt-2 text-gray-500">Add, view, and manage other admins.</p>
+                    </div>
+                    <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90">
+                        <UserPlus className="w-5 h-5 mr-2" />
+                        Add New Admin
+                    </button>
                 </div>
-                <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90">
-                    <UserPlus className="w-5 h-5 mr-2" />
-                    Add New Admin
-                </button>
-            </div>
 
-            <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                    <thead className="text-xs uppercase bg-gray-50">
-                        <tr>
-                            <th scope="col" className="px-6 py-3">Name</th>
-                            <th scope="col" className="px-6 py-3">Email</th>
-                            <th scope="col" className="px-6 py-3">Gender</th>
-                            <th scope="col" className="px-6 py-3">Role</th>
-                            <th scope="col" className="px-6 py-3">Phone</th>
-                            <th scope="col" className="px-6 py-3">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {admins.map((admin) => (
-                            <tr key={admin.id} className="border-b hover:bg-gray-50">
-                                <td className="px-6 py-4 font-medium">{admin.name}</td>
-                                <td className="px-6 py-4">{admin.email}</td>
-                                <td className="px-6 py-4">{admin.gender}</td>
-                                <td className="px-6 py-4">
-                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                                        {admin.role}
-                                    </span>
-                                </td>
-                                <td className="px-6 py-4">{admin.phone_number}</td>
-                                <td className="px-6 py-4">
-                                    <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 hover:underline">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                </td>
+                <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                        <thead className="text-xs uppercase bg-gray-50">
+                            <tr>
+                                <th scope="col" className="px-6 py-3">Name</th>
+                                <th scope="col" className="px-6 py-3">Email</th>
+                                <th scope="col" className="px-6 py-3">Gender</th>
+                                <th scope="col" className="px-6 py-3">Role</th>
+                                <th scope="col" className="px-6 py-3">Phone</th>
+                                <th scope="col" className="px-6 py-3">Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {admins.map((admin) => (
+                                <tr key={admin.id} className="border-b hover:bg-gray-50">
+                                    <td className="px-6 py-4 font-medium">{admin.name}</td>
+                                    <td className="px-6 py-4">{admin.email}</td>
+                                    <td className="px-6 py-4">{admin.gender}</td>
+                                    <td className="px-6 py-4">
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                                            {admin.role}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">{admin.phone_number}</td>
+                                    <td className="px-6 py-4">
+                                        <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 hover:underline">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
-            <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
-        </div>
+                <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
+            </div>
         </Suspense>
     );
 }

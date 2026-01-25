@@ -153,6 +153,14 @@ def get_applications(db, skip=0, limit=100):
         joinedload(models.Application.teacher), joinedload(models.Application.course)
     ).offset(skip).limit(limit).all()
 
+def delete_application(db: Session, student_id: int):
+    """Deletes a student application by ID."""
+    db_student = db.query(models.Application).filter(models.Application.id == student_id).first()
+    if db_student:
+        db.delete(db_student)
+        db.commit()
+    return db_student
+
 def get_teachers_by_gender(db: Session, gender: str, skip: int = 0, limit: int = 100):
     """Retrieves all teacher records of a specific gender."""
     return db.query(models.Teacher).filter(models.Teacher.gender == gender).offset(skip).limit(limit).all()

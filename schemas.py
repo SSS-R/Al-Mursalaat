@@ -79,7 +79,7 @@ class ScheduleUpdate(BaseModel):
     teacher_id: Optional[int] = None
 class Schedule(ScheduleBase):
     id: int
-    student: 'Application'
+    # REMOVED student to prevent recursion (Application -> schedules -> Schedule -> student -> Application...)
     class Config:
         from_attributes = True
 
@@ -145,6 +145,7 @@ class Application(ApplicationBase):
     # This tells Pydantic to expect a nested Teacher object.
     # The string 'Teacher' is a "forward reference" to prevent errors.
     teacher: Optional['Teacher'] = None
+    schedules: List['Schedule'] = []
     class Config:
         from_attributes = True
 

@@ -288,24 +288,24 @@ export default function HomePage() {
   // State to track which course is selected
   const [selectedCourse, setSelectedCourse] = useState<string>("");
 
-// Function to handle "Enroll Now" clicks
+  // Function to handle "Enroll Now" clicks
   const handleEnrollClick = (courseTitle: string) => {
-  let value = "";
-  // Map the display title to the dropdown value
-  if (courseTitle.includes("Kayda")) value = "Quran Learning (Kayda)";
-  else if (courseTitle.includes("Nazra")) value = "Quran Reading (Nazra)";
-  else if (courseTitle.includes("Memorization") || courseTitle.includes("Hifz")) value = "Quran Memorization (Hifz)";
-  else if (courseTitle.includes("Islamic")) value = "Islamic Studies";
-  
-  setSelectedCourse(value);
-  
-  // Smooth scroll to the admission form
-  const admissionSection = document.getElementById('admission');
-  if (admissionSection) {
-    admissionSection.scrollIntoView({ behavior: 'smooth' });
+    let value = "";
+    // Map the display title to the dropdown value
+    if (courseTitle.includes("Kayda")) value = "Quran Learning (Kayda)";
+    else if (courseTitle.includes("Nazra")) value = "Quran Reading (Nazra)";
+    else if (courseTitle.includes("Memorization") || courseTitle.includes("Hifz")) value = "Quran Memorization (Hifz)";
+    else if (courseTitle.includes("Islamic")) value = "Islamic Studies";
+
+    setSelectedCourse(value);
+
+    // Smooth scroll to the admission form
+    const admissionSection = document.getElementById('admission');
+    if (admissionSection) {
+      admissionSection.scrollIntoView({ behavior: 'smooth' });
     }
   };
-  
+
   // --- NEW: State for Form and Modal ---
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{
@@ -358,7 +358,7 @@ export default function HomePage() {
     };
     try {
       const response = await fetch(
-        "https://almursalaatonline.com/submit-application/",
+        "/submit-application/",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -678,7 +678,7 @@ export default function HomePage() {
                     </span>
                     {/* Update all "Enroll Now" buttons in the courses section to link to admission */}
                     <Link href="#admission">
-                      <Button 
+                      <Button
                         onClick={() => handleEnrollClick(course.title)}
                         className="bg-primary hover:bg-primary/90 transform transition-all duration-300 hover:scale-110 hover:shadow-lg"
                       >
@@ -1145,7 +1145,7 @@ export default function HomePage() {
                         required
                         className="w-full p-2 border border-gray-300 rounded-md transition-all duration-300 focus:scale-105 focus:shadow-lg"
                         value={selectedCourse}
-                        onChange={e=>setSelectedCourse(e.target.value)}
+                        onChange={e => setSelectedCourse(e.target.value)}
                       >
                         <option value="">Select a course</option>
                         <option value="Quran Learning (Kayda)">
@@ -1207,11 +1207,10 @@ export default function HomePage() {
                     {message && (
                       <div className="md:col-span-2">
                         <div
-                          className={`p-4 rounded-lg ${
-                            message.type === "success"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
+                          className={`p-4 rounded-lg ${message.type === "success"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                            }`}
                         >
                           {message.text}
                         </div>
@@ -1347,7 +1346,7 @@ export default function HomePage() {
                   {section.links.map((link, i) => (
                     <li key={i}>
                       {section.title === "Quick Links" ||
-                      section.title === "Courses" ? (
+                        section.title === "Courses" ? (
                         <Link
                           href={"#" + link.toLowerCase()}
                           className="hover:text-white transition-all duration-300 hover:translate-x-2 inline-block"

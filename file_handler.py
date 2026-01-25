@@ -1,136 +1,159 @@
-# file_handler.py
 import os
-import uuid
-from pathlib import Path
-from fastapi import UploadFile, HTTPException
+import cloudinary
+import cloudinary.uploader
+from fastapi import UploadFile
+from dotenv import load_dotenv
 
-# Define base directory for file storage
-BASE_DIR = Path(__file__).parent
-PHOTO_DIR = BASE_DIR / "Frontend" / "public" / "bucket" / "teacherImg"
-CV_DIR = BASE_DIR / "Frontend" / "public" / "bucket" / "CV"
+load_dotenv()
 
-# Create directories if they don't exist
-PHOTO_DIR.mkdir(parents=True, exist_ok=True)
-CV_DIR.mkdir(parents=True, exist_ok=True)
-
-print(f"[FILE_HANDLER] Photo directory: {PHOTO_DIR}")
-print(f"[FILE_HANDLER] CV directory: {CV_DIR}")
-
+# 1. Configure Cloudinary
+# It automatically picks up the variables from your .env file
+cloudinary.config( 
+  cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
+  api_key = os.getenv("CLOUDINARY_API_KEY"), 
+  api_secret = os.getenv("CLOUDINARY_API_SECRET"),
+  secure = True
+)
 
 async def save_teacher_photo(file: UploadFile) -> str:
     """
-    Saves a teacher photo file and returns the relative URL path.
-    
-    Args:
-        file: UploadFile object from FastAPI
-        
-    Returns:
-        str: Relative URL path to the saved file (e.g., "/bucket/teacherImg/filename.jpg")
-        
-    Raises:
-        HTTPException: If file type is invalid or file size exceeds 5MB
+    Uploads a photo to Cloudinary and returns the public URL.
     """
-    # Validate file type
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Photo must be an image file")
-    
-    # Validate file size (5MB = 5242880 bytes)
-    file_content = await file.read()
-    if len(file_content) > 5242880:
-        raise HTTPException(status_code=400, detail="Photo must be 5MB or smaller")
-    
-    # Generate unique filename
-    file_extension = file.filename.split(".")[-1] if file.filename else "jpg"
-    unique_filename = f"{uuid.uuid4()}.{file_extension}"
-    
-    # Save file
-    file_path = PHOTO_DIR / unique_filename
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-    
-    # Return relative URL path
-    return f"/bucket/teacherImg/{unique_filename}"
-
+    try:
+        # We pass the file object directly to Cloudinary
+        upload_result = cloudinary.uploader.upload(
+            file.file,
+            folder="teacher_photos",  # This creates a folder in your Cloudinary
+            resource_type="image"
+        )
+        return upload_result.get("secure_url")
+    except Exception as e:
+        print(f"Error uploading photo to Cloudinary: {e}")
+        return None
 
 async def save_teacher_cv(file: UploadFile) -> str:
     """
-    Saves a teacher CV file and returns the relative URL path.
-    
-    Args:
-        file: UploadFile object from FastAPI
-        
-    Returns:
-        str: Relative URL path to the saved file (e.g., "/bucket/CV/filename.pdf")
-        
-    Raises:
-        HTTPException: If file type is not PDF or file size exceeds 10MB
+    Uploads a CV (PDF) to Cloudinary and returns the public URL.
     """
-    # Validate file type
-    if not file.content_type or file.content_type != "application/pdf":
-        raise HTTPException(status_code=400, detail="CV must be a PDF file")
-    
-    # Validate file size (10MB = 10485760 bytes)
-    file_content = await file.read()
-    if len(file_content) > 10485760:
-        raise HTTPException(status_code=400, detail="CV must be 10MB or smaller")
-    
-    # Generate unique filename
-    unique_filename = f"{uuid.uuid4()}.pdf"
-    
-    # Save file
-    file_path = CV_DIR / unique_filename
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-    
-    # Return relative URL path
-    return f"/bucket/CV/{unique_filename}"
+    try:
+        # 'auto' resource_type detects if it is a PDF or image
+        upload_result = cloudinary.uploader.upload(
+            file.file,
+            folder="teacher_cvs",
+            resource_type="auto" 
+        )
+        return upload_result.get("secure_url")
+    except Exception as e:
+        print(f"Error uploading CV to Cloudinary: {e}")
+        return None
 
-
-def delete_teacher_photo(photo_url: str) -> bool:
+def _get_cloudinary_public_id_and_type(url: str):
     """
-    Deletes a teacher photo file.
+    Parses a Cloudinary URL to extract the public_id and the resource_type.
     
-    Args:
-        photo_url: Relative URL path to the file
-        
+    Expected format: 
+    https://res.cloudinary.com/<cloud_name>/<resource_type>/upload/v<version>/<folder>/<filename>
+    or
+    https://res.cloudinary.com/<cloud_name>/<resource_type>/upload/<folder>/<filename>
+    
     Returns:
-        bool: True if deleted successfully, False otherwise
+        (public_id, resource_type) or (None, None)
+    """
+    if not url:
+        return None, None
+        
+    try:
+        # Example URL: https://res.cloudinary.com/demo/image/upload/v12345/teacher_photos/abc.jpg
+        # specific structure parts
+        parts = url.split("/")
+        
+        # Determine resource_type (usually index 4 if standard, but safer to look for 'upload')
+        if "upload" not in parts:
+            return None, None
+            
+        upload_index = parts.index("upload")
+        
+        # resource_type should be before 'upload' (e.g., 'image', 'raw', 'video')
+        # .../image/upload/... -> resource_type = image
+        # .../raw/upload/...   -> resource_type = raw
+        resource_type = parts[upload_index - 1]
+        
+        # public_id is everything after the version (v12345) or after 'upload' if no version
+        # It includes the folder structure but NOT the extension (for images) or WITH extension (for raw sometimes, dependent on config)
+        
+        # Let's rebuild the path after 'upload'
+        path_remainder = parts[upload_index+1:]
+        
+        # Remove version if present (starts with 'v' and is numeric)
+        if path_remainder and path_remainder[0].startswith("v") and path_remainder[0][1:].isdigit():
+            path_remainder.pop(0)
+            
+        # Rejoin to get full path: "teacher_photos/abc.jpg"
+        full_filename = "/".join(path_remainder)
+        
+        # For 'image' and 'video', public_id does NOT include extension.
+        # For 'raw', it usually DOES include extension, but Cloudinary API destroy can be tricky.
+        # Standardize: remove extension for image/video. Keep for raw? 
+        # Actually, Cloudinary python SDK usually expects public_id without extension for images,
+        # but WITH extension for raw files if they were uploaded with one.
+        
+        if resource_type in ["image", "video"]:
+            public_id = full_filename.rsplit(".", 1)[0]
+        else:
+            # For raw files, the public_id usually includes the extension if it was preserved.
+            # However, simpler to try both or rely on how we uploaded it.
+            # In save_teacher_cv, we used 'auto'. If it became 'image', it behaves like image.
+            # If it became 'raw', it keeps extension.
+            # Safe bet: Try to strip extension for consistency if it acts weird, 
+            # but usually raw files in Cloudinary include extension in ID.
+            # Let's rely on standard logic: raw files often need full filename as public_id.
+            public_id = full_filename
+
+        return public_id, resource_type
+        
+    except Exception as e:
+        print(f"Error parsing Cloudinary URL '{url}': {e}")
+        return None, None
+
+def delete_teacher_photo(photo_url: str):
+    """
+    Deletes the teacher photo.
     """
     if not photo_url:
-        return False
-    
+        return
+
     try:
-        filename = photo_url.split("/")[-1]
-        file_path = PHOTO_DIR / filename
-        if file_path.exists():
-            file_path.unlink()
-            return True
-    except Exception:
-        pass
-    
-    return False
+        public_id, resource_type = _get_cloudinary_public_id_and_type(photo_url)
+        if public_id and resource_type:
+            # Force 'image' if we are sure it's a photo, but relying on URL analysis is safer.
+            # If URL says 'raw', we shouldn't pass 'image'.
+            cloudinary.uploader.destroy(public_id, resource_type=resource_type)
+            print(f"Deleted photo: {public_id} [{resource_type}]")
+        else:
+             print(f"Could not parse URL for deletion: {photo_url}")
+             
+    except Exception as e:
+        print(f"Error deleting photo from Cloudinary: {e}")
 
-
-def delete_teacher_cv(cv_url: str) -> bool:
+def delete_teacher_cv(cv_url: str):
     """
-    Deletes a teacher CV file.
-    
-    Args:
-        cv_url: Relative URL path to the file
-        
-    Returns:
-        bool: True if deleted successfully, False otherwise
+    Deletes the teacher CV (PDF/Image).
     """
     if not cv_url:
-        return False
-    
+        return
+
     try:
-        filename = cv_url.split("/")[-1]
-        file_path = CV_DIR / filename
-        if file_path.exists():
-            file_path.unlink()
-            return True
-    except Exception:
-        pass
-    
-    return False
+        public_id, resource_type = _get_cloudinary_public_id_and_type(cv_url)
+        if public_id and resource_type:
+            result = cloudinary.uploader.destroy(public_id, resource_type=resource_type)
+            print(f"Deleted CV: {public_id} [{resource_type}] Result: {result}")
+            
+            # Fallback: specific case where raw files might be tricky with extensions
+            # If we tried 'raw' and it failed (result not 'ok'), maybe try without extension?
+            # Or if we parsed 'image' but it was 'raw'?
+            # The URL parser is the source of truth.
+        else:
+            print(f"Could not parse URL for deletion: {cv_url}")
+
+    except Exception as e:
+        print(f"Error deleting CV from Cloudinary: {e}")

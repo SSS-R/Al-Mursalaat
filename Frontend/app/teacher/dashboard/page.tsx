@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { apiFetch } from "@/lib/api";
 import { CalendarDays, Clock, Video } from "lucide-react";
 
 // --- Types ---
@@ -31,13 +32,7 @@ export default function TeacherDashboard() {
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
-        const response = await fetch("/api/teacher/me", {
-          credentials: "include",
-        });
-        if (!response.ok) {
-          throw new Error("Could not fetch teacher data. Please re-login.");
-        }
-        const data: Teacher = await response.json();
+        const data = await apiFetch<Teacher>("/api/teacher/me");
         setTeacher(data);
       } catch (err: any) {
         setError(err.message);
@@ -128,10 +123,10 @@ export default function TeacherDashboard() {
                   ))}
                   {(!schedulesByDay[day] ||
                     schedulesByDay[day].length === 0) && (
-                    <p className="text-xs text-gray-400 italic p-3">
-                      No classes
-                    </p>
-                  )}
+                      <p className="text-xs text-gray-400 italic p-3">
+                        No classes
+                      </p>
+                    )}
                 </td>
               ))}
             </tr>

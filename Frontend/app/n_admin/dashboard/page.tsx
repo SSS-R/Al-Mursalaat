@@ -11,6 +11,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
 // --- Types (Corrected to match backend schemas) ---
 interface Student {
@@ -95,12 +96,9 @@ function AddScheduleModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filter out students who are already scheduled
-  const unscheduledStudents = useMemo(() => {
-    const scheduledStudentIds = new Set(
-      teacher.schedules.map((s) => s.student_id)
-    );
-    return teacher.students.filter((s) => !scheduledStudentIds.has(s.id));
+  // Allow adding multiple schedules for the same student (Flexible Scheduling)
+  const availableStudents = useMemo(() => {
+    return teacher.students;
   }, [teacher]);
 
   const toggleDay = (day: string) => {
@@ -175,16 +173,16 @@ function AddScheduleModal({
                 required
                 className="mt-1 w-full p-2 border rounded-md"
               >
-                <option value="">Select an unscheduled student</option>
-                {unscheduledStudents.map((s) => (
+                <option value="">Select a student</option>
+                {availableStudents.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.first_name} {s.last_name} ({s.preferred_course})
                   </option>
                 ))}
               </select>
-              {unscheduledStudents.length === 0 && (
+              {availableStudents.length === 0 && (
                 <p className="text-xs text-gray-500 mt-1">
-                  All of this teacher's students are scheduled.
+                  No students assigned to this teacher yet.
                 </p>
               )}
             </div>
@@ -206,11 +204,10 @@ function AddScheduleModal({
                     key={day}
                     type="button"
                     onClick={() => toggleDay(day)}
-                    className={`px-3 py-2 border rounded-md text-sm transition-colors ${
-                      selectedDays.includes(day)
-                        ? "bg-primary text-white border-primary"
-                        : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
+                    className={`px-3 py-2 border rounded-md text-sm transition-colors ${selectedDays.includes(day)
+                      ? "bg-primary text-white border-primary"
+                      : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      }`}
                   >
                     {day.substring(0, 3)}
                   </button>
@@ -373,25 +370,17 @@ function SessionAttendanceModal({
         setIsEditMode(false);
       } else if (isEditAttendanceMode && existingAttendance) {
         // Update existing attendance
-        const response = await fetch(
-          `/api/admin/session-attendance/${existingAttendance.id}`,
-          {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({
-              teacher_status: teacherStatus,
-              status: studentStatus,
-            }),
-          }
-        );
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.detail || "Failed to update attendance.");
-        }
+        await apiFetch(`/api/admin/session-attendance/${existingAttendance.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            teacher_status: teacherStatus,
+            status: studentStatus,
+          }),
+        });
+
         alert("Attendance updated successfully!");
         setIsEditAttendanceMode(false);
-        
+
         // Refresh attendance count if callback is provided
         if (onAttendanceUpdated && selectedMonth) {
           const attendanceMonth = classDate.slice(0, 7); // Extract YYYY-MM
@@ -399,7 +388,7 @@ function SessionAttendanceModal({
             await onAttendanceUpdated(classDate);
           }
         }
-        
+
         onClose();
       } else if (!hasExistingAttendance) {
         // Create new attendance
@@ -439,10 +428,10 @@ function SessionAttendanceModal({
               {isEditMode
                 ? "Edit Schedule"
                 : isEditAttendanceMode
-                ? "Edit Attendance"
-                : isReadOnly
-                ? "View Session"
-                : "Mark Session Attendance"}
+                  ? "Edit Attendance"
+                  : isReadOnly
+                    ? "View Session"
+                    : "Mark Session Attendance"}
             </h3>
             <button type="button" onClick={handleClose}>
               <X size={20} />
@@ -452,7 +441,7 @@ function SessionAttendanceModal({
             {error && (
               <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>
             )}
-            
+
             {isEditMode ? (
               // Schedule Edit Form
               <>
@@ -491,11 +480,10 @@ function SessionAttendanceModal({
                         key={day}
                         type="button"
                         onClick={() => toggleEditDay(day)}
-                        className={`px-3 py-2 border rounded-md text-sm transition-colors ${
-                          editSelectedDays.includes(day)
-                            ? "bg-primary text-white border-primary"
-                            : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
-                        }`}
+                        className={`px-3 py-2 border rounded-md text-sm transition-colors ${editSelectedDays.includes(day)
+                          ? "bg-primary text-white border-primary"
+                          : "bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+                          }`}
                       >
                         {day.substring(0, 3)}
                       </button>
@@ -963,12 +951,7 @@ export default function NormalAdminDashboard() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/admin/teachers/", {
-        credentials: "include",
-      });
-      if (!response.ok)
-        throw new Error("Failed to fetch teachers. Please log in again.");
-      const data: Teacher[] = await response.json();
+      const data = await apiFetch<Teacher[]>("/api/admin/teachers/");
       setTeachers(data);
     } catch (err: any) {
       setError(err.message);
@@ -1061,25 +1044,14 @@ export default function NormalAdminDashboard() {
     try {
       await Promise.all(
         recordsToSave.map((record) =>
-          fetch("/admin/attendance/", {
+          apiFetch("/admin/attendance/", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
             body: JSON.stringify(record),
-          }).then((res) => {
-            if (!res.ok)
-              throw new Error(
-                `Failed to save attendance for student ID ${record.student_id}`
-              );
           })
         )
       );
       alert("Attendance saved successfully!");
-      const response = await fetch(
-        `/api/admin/attendance/?teacher_id=${teacherId}&class_date=${selectedDate}`,
-        { credentials: "include" }
-      );
-      const data = await response.json();
+      const data = await apiFetch<AttendanceRecord[]>(`/api/admin/attendance/?teacher_id=${teacherId}&class_date=${selectedDate}`);
       setExistingAttendance(data);
     } catch (error: any) {
       alert(`Error: ${error.message}`);
@@ -1094,16 +1066,10 @@ export default function NormalAdminDashboard() {
   };
 
   const handleSaveSchedule = async (scheduleData: any) => {
-    const response = await fetch("/api/admin/schedules/", {
+    await apiFetch("/api/admin/schedules/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify(scheduleData),
     });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to save schedule.");
-    }
     setIsScheduleModalOpen(false);
     await fetchData(); // Re-fetch all data to show the new schedule
   };
@@ -1123,16 +1089,14 @@ export default function NormalAdminDashboard() {
   };
 
   const fetchSessionAttendance = async (scheduleId: number, date: string) => {
-    const response = await fetch(
-      `/api/admin/session-attendance/?teacher_id=${openTeacherId}&start_date=${date}&end_date=${date}`,
-      { credentials: "include" }
-    );
-    if (response.ok) {
-      const data: SessionAttendance[] = await response.json();
+    try {
+      const data = await apiFetch<SessionAttendance[]>(`/api/admin/session-attendance/?teacher_id=${openTeacherId}&start_date=${date}&end_date=${date}`);
       const existing = data.find(
         (a) => a.schedule_id === scheduleId && a.class_date === date
       );
       setExistingSessionAttendance(existing || null);
+    } catch (e) {
+      console.warn("Failed to fetch session attendance", e);
     }
   };
 
@@ -1140,14 +1104,8 @@ export default function NormalAdminDashboard() {
     setLoadingAttendanceCount(true);
     const [year, month] = monthStr.split("-");
     try {
-      const response = await fetch(
-        `/api/admin/attendance-count/?teacher_id=${teacherId}&year=${year}&month=${month}`,
-        { credentials: "include" }
-      );
-      if (response.ok) {
-        const data: AttendanceCount = await response.json();
-        setAttendanceCount(data);
-      }
+      const data = await apiFetch<AttendanceCount>(`/api/admin/attendance-count/?teacher_id=${teacherId}&year=${year}&month=${month}`);
+      setAttendanceCount(data);
     } catch (err) {
       console.error("Error fetching attendance count:", err);
     } finally {
@@ -1156,19 +1114,10 @@ export default function NormalAdminDashboard() {
   };
 
   const handleSaveSessionAttendance = async (attendanceData: any) => {
-    const response = await fetch(
-      "/api/admin/session-attendance/",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(attendanceData),
-      }
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to save attendance.");
-    }
+    await apiFetch("/api/admin/session-attendance/", {
+      method: "POST",
+      body: JSON.stringify(attendanceData),
+    });
     alert("Session attendance saved successfully!");
     setIsSessionAttendanceModalOpen(false);
 
@@ -1182,22 +1131,13 @@ export default function NormalAdminDashboard() {
   };
 
   const handleUpdateSchedule = async (scheduleId: number, updateData: any) => {
-    const response = await fetch(
-      `/api/admin/schedules/${scheduleId}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(updateData),
-      }
-    );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to update schedule.");
-    }
+    await apiFetch(`/api/admin/schedules/${scheduleId}`, {
+      method: "PATCH",
+      body: JSON.stringify(updateData),
+    });
     alert("Schedule updated successfully!");
     setIsSessionAttendanceModalOpen(false);
-    
+
     // Re-fetch all data to show the updated schedule
     await fetchData();
   };
@@ -1277,9 +1217,8 @@ export default function NormalAdminDashboard() {
                     Students: {teacher.students.length}
                   </span>
                   <ChevronDown
-                    className={`w-5 h-5 transition-transform ${
-                      isExpanded ? "rotate-180" : ""
-                    }`}
+                    className={`w-5 h-5 transition-transform ${isExpanded ? "rotate-180" : ""
+                      }`}
                   />
                 </div>
               </button>
@@ -1483,12 +1422,12 @@ export default function NormalAdminDashboard() {
         })}
         {(!sortedAndFilteredTeachers ||
           sortedAndFilteredTeachers.length === 0) && (
-          <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <p className="text-gray-500 dark:text-gray-400">
-              No teachers match the current filters.
-            </p>
-          </div>
-        )}
+            <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+              <p className="text-gray-500 dark:text-gray-400">
+                No teachers match the current filters.
+              </p>
+            </div>
+          )}
       </div>
 
       {/* Render the new modal */}

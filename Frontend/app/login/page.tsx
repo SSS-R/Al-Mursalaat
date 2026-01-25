@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { jwtDecode } from 'jwt-decode';
 import {
@@ -21,10 +22,10 @@ function setCookie(name: string, value: string, days: number) {
     let expires = "";
     if (days) {
         const date = new Date();
-        date.setTime(date.getTime() + (days*24*60*60*1000));
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
         expires = "; expires=" + date.toUTCString();
     }
-    document.cookie = name + "=" + (value || "")  + expires + "; path=/";
+    document.cookie = name + "=" + (value || "") + expires + "; path=/";
 }
 
 // Define the shape of the decoded token
@@ -58,7 +59,7 @@ export default function AdminLoginPage() {
             params.append('username', email);
             params.append('password', password);
 
-            const response = await fetch('/api/login', {
+            const data = await apiFetch<any>('/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
@@ -66,31 +67,25 @@ export default function AdminLoginPage() {
                 body: params,
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                const token = data.access_token;
-                
-                // Decode the token to get the user's role
-                const decodedToken: DecodedToken = jwtDecode(token);
-                const userRole = decodedToken.role;
+            const token = data.access_token;
 
-                // Save the token in a cookie
-                setCookie('sessionToken', token, 7); // Save for 7 days
+            // Decode the token to get the user's role
+            const decodedToken: DecodedToken = jwtDecode(token);
+            const userRole = decodedToken.role;
 
-// Redirect based on the user's role
-                if (userRole === 'supreme-admin') {
-                    router.push('/admin/dashboard');
-                } else if (userRole === 'admin') {
-                    router.push('/n_admin/dashboard');
-                } else if (userRole === 'teacher') {
-                    router.push('/teacher/dashboard'); // <-- This is the fix
-                } else {
-                    // Fallback in case of an unknown role
-                    setError('Unknown user role. Cannot redirect.');
-                }
+            // Save the token in a cookie
+            setCookie('sessionToken', token, 7); // Save for 7 days
+
+            // Redirect based on the user's role
+            if (userRole === 'supreme-admin') {
+                router.push('/admin/dashboard');
+            } else if (userRole === 'admin') {
+                router.push('/n_admin/dashboard');
+            } else if (userRole === 'teacher') {
+                router.push('/teacher/dashboard'); // <-- This is the fix
             } else {
-                const errorData = await response.json();
-                setError(errorData.detail || 'An unexpected error occurred.');
+                // Fallback in case of an unknown role
+                setError('Unknown user role. Cannot redirect.');
             }
         } catch (error) {
             console.error('Login request failed:', error);
@@ -111,24 +106,16 @@ export default function AdminLoginPage() {
         setForgotSuccess(false);
 
         try {
-            const response = await fetch('/api/forgot-pass', {
+            await apiFetch('/api/forgot-pass', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({ email: forgotEmail }),
             });
 
-            if (response.ok) {
-                setForgotSuccess(true);
-                setForgotEmail('');
-            } else {
-                const errorData = await response.json();
-                setForgotError(errorData.detail || 'Failed to send password reset request.');
-            }
-        } catch (error) {
+            setForgotSuccess(true);
+            setForgotEmail('');
+        } catch (error: any) {
             // console.error('Forgot password request failed:', error);
-            setForgotError('Could not connect to the server. Please try again.');
+            setForgotError(error.message || 'Could not connect to the server. Please try again.');
         } finally {
             setIsForgotLoading(false);
         }
@@ -156,7 +143,7 @@ export default function AdminLoginPage() {
                         <input id="email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 border rounded-lg" placeholder="you@example.com" />
                     </div>
                     <div>
-                        <label htmlFor="password"className="block mb-2 text-sm font-medium">Password</label>
+                        <label htmlFor="password" className="block mb-2 text-sm font-medium">Password</label>
                         <input id="password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 border rounded-lg" placeholder="••••••••" />
                     </div>
                     {error && (<div className="flex items-center p-3 text-sm text-red-700 bg-red-100 rounded-lg"><AlertCircle className="w-5 h-5 mr-2" /><span>{error}</span></div>)}
@@ -186,7 +173,7 @@ export default function AdminLoginPage() {
                                 Enter your email address and we'll send you instructions to reset your password.
                             </DialogDescription>
                         </DialogHeader>
-                        
+
                         {!forgotSuccess ? (
                             <>
                                 <div className="space-y-4 py-4">

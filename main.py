@@ -30,7 +30,15 @@ print(f"--- DEBUG: Attempting to connect with USER='{os.getenv('DB_USER')}' to H
 
 models.Base.metadata.create_all(bind=engine)
 
-JWT_SECRET = os.getenv("JWT_SECRET", "YOUR_SUPER_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG")
+JWT_SECRET = os.getenv("JWT_SECRET")
+if not JWT_SECRET or JWT_SECRET == "YOUR_SUPER_SECRET_KEY_THAT_IS_AT_LEAST_32_CHARACTERS_LONG":
+    print("CRITICAL WARNING: JWT_SECRET is not set or is using the default insecure key!")
+    # In production, you might want to raise an error here:
+    # raise ValueError("JWT_SECRET must be set in .env for production security.")
+    # For now, we will fallback but warn heavily.
+    if not JWT_SECRET:
+        JWT_SECRET = "CHANGE_ME_IN_PRODUCTION_" + secrets.token_urlsafe(32)
+
 ALGORITHM = "HS256"
 
 app = FastAPI(
@@ -121,16 +129,31 @@ def create_supreme_admin_on_startup():
         # 5. Always close the session
         db.close()
 
+# --- Redis & Rate Limiter Configuration ---
+# Allow bypassing Redis for local development
+DISABLE_RATE_LIMIT = os.getenv("DISABLE_RATE_LIMIT", "False").lower() in ("true", "1", "t")
+
 @app.on_event("startup")
 async def startup():
-    redis_connection = redis.from_url("redis://localhost", encoding="utf-8", decode_responses=True)
-    await FastAPILimiter.init(redis_connection)
+    if not DISABLE_RATE_LIMIT:
+        redis_host = os.getenv("REDIS_HOST", "localhost")
+        try:
+            print(f"--- REDIS: Attempting connection to {redis_host} ---")
+            redis_connection = redis.from_url(f"redis://{redis_host}", encoding="utf-8", decode_responses=True)
+            await FastAPILimiter.init(redis_connection)
+            print("--- REDIS: Connected and Rate Limiter Initialized ---")
+        except Exception as e:
+            print(f"--- REDIS ERROR: Could not connect to Redis: {e} ---")
+            print("--- WARNING: Rate Limiting will be disabled due to connection error. ---")
+    else:
+        print("--- REDIS: Rate Limiting DISABLED by configuration ---")
 
 origins = [
     "http://localhost:3000",
     "http://localhost:5173",
     "https://almursalaatonline.com",
-    "https://www.almursalaatonline.com"
+    "https://www.almursalaatonline.com",
+    # "*"  <-- DANGEROUS: Removed wildcard to prevent CSRF/unauthorized access
 ]
 
 app.add_middleware(
@@ -451,6 +474,18 @@ def assign_student(student_id: int, assignment: schemas.StudentAssign, db: Sessi
     updated_student = crud.assign_teacher_and_shift(db=db, student_id=student_id, teacher_id=assignment.teacher_id, shift=assignment.shift)
     return updated_student
 
+@app.delete("/api/admin/students/{student_id}", response_model=schemas.Application)
+def delete_student(student_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+    if current_admin.role not in ["admin", "supreme-admin"]:
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_student = crud.get_application_by_id(db, application_id=student_id)
+    if not db_student:
+        raise HTTPException(status_code=404, detail="Student not found.")
+        
+    crud.delete_application(db=db, student_id=student_id)
+    return db_student
+
 # --- Dashboard Stats Endpoint ---
 
 @app.get("/api/admin/dashboard-stats/")
@@ -626,22 +661,22 @@ def get_my_stats(
     if current_user.role != "teacher": raise HTTPException(403)
     return crud.get_attendance_count_by_month(db, current_user.id, year, month)
 
-@app.get("/api/courses/", response_model=List[schemas.Course])
-def read_courses(db: Session = Depends(get_db)):
-    """Used by frontend dropdowns to show available courses."""
-    return crud.get_courses(db)
+# @app.get("/api/courses/", response_model=List[schemas.Course])
+# def read_courses(db: Session = Depends(get_db)):
+#     """Used by frontend dropdowns to show available courses."""
+#     return crud.get_courses(db)
 
-@app.post("/api/admin/courses/", response_model=schemas.Course, status_code=201)
-def create_course(
-    course: schemas.CourseCreate,
-    db: Session = Depends(get_db),
-    current_admin: dict = Depends(get_current_admin)
-):
-    """Admin creates the 4 standard courses here."""
-    if current_admin.role not in ["admin", "supreme-admin"]:
-        raise HTTPException(status_code=403, detail="Forbidden")
-    if crud.get_course_by_name(db, course.name):
-        raise HTTPException(status_code=400, detail="Course already exists")
-    return crud.create_course(db, course)
+# @app.post("/api/admin/courses/", response_model=schemas.Course, status_code=201)
+# def create_course(
+#     course: schemas.CourseCreate,
+#     db: Session = Depends(get_db),
+#     current_admin: dict = Depends(get_current_admin)
+# ):
+#     """Admin creates the 4 standard courses here."""
+#     if current_admin.role not in ["admin", "supreme-admin"]:
+#         raise HTTPException(status_code=403, detail="Forbidden")
+#     if crud.get_course_by_name(db, course.name):
+#         raise HTTPException(status_code=400, detail="Course already exists")
+#     return crud.create_course(db, course)
 
 

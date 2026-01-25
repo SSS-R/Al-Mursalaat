@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, Suspense, FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { UserPlus, X, PlusCircle, Trash2 } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 // --- Types (Corrected to match backend) ---
 interface Student {
@@ -325,12 +326,14 @@ function ManageStudentModal({
   isOpen,
   onClose,
   onSave,
+  onDelete,
 }: {
   student: Student;
   teachers: Teacher[];
   isOpen: boolean;
   onClose: () => void;
   onSave: (data: any) => Promise<void>;
+  onDelete: (id: number) => Promise<void>;
 }) {
   const [teacherId, setTeacherId] = useState<string>(
     student.teacher_id?.toString() || ""
@@ -338,6 +341,7 @@ function ManageStudentModal({
   const [shift, setShift] = useState<string>(student.shift || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -431,6 +435,45 @@ function ManageStudentModal({
               {isLoading ? "Saving..." : "Approve & Assign"}
             </button>
           </div>
+          <div className="p-4 border-t bg-red-50 flex flex-col gap-2">
+            <span className="text-sm text-red-600 font-medium">Danger Zone</span>
+
+            {!isDeleteConfirmOpen ? (
+              <button
+                type="button"
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                className="self-end px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 flex items-center"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Student
+              </button>
+            ) : (
+              <div className="flex items-center justify-between bg-white p-3 border border-red-200 rounded-md">
+                <span className="text-sm text-red-700 font-semibold">Are you sure? This is permanent.</span>
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteConfirmOpen(false)}
+                    className="px-3 py-1 text-xs text-gray-600 border rounded hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsLoading(true);
+                      await onDelete(student.id);
+                      setIsLoading(false);
+                      onClose();
+                    }}
+                    className="px-3 py-1 text-xs text-white bg-red-700 rounded hover:bg-red-800 font-bold"
+                  >
+                    Yes, Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </form>
       </div>
     </div>
@@ -440,7 +483,7 @@ function ManageStudentModal({
 // --- MAIN STUDENTS PAGE COMPONENT WRAPPER ---
 export default function StudentsPageWrapper() {
   return (
-      <StudentsPage />
+    <StudentsPage />
   );
 }
 
@@ -465,18 +508,10 @@ function StudentsPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [studentsRes, teachersRes] = await Promise.all([
-        fetch("/api/admin/students/", {
-          credentials: "include",
-        }),
-        fetch("/api/admin/teachers/", {
-          credentials: "include",
-        }),
+      const [studentsData, teachersData] = await Promise.all([
+        apiFetch<Student[]>("/api/admin/students/"),
+        apiFetch<Teacher[]>("/api/admin/teachers/"),
       ]);
-      if (!studentsRes.ok) throw new Error("Failed to fetch students.");
-      if (!teachersRes.ok) throw new Error("Failed to fetch teachers.");
-      const studentsData = await studentsRes.json();
-      const teachersData = await teachersRes.json();
       setStudents(studentsData);
       setTeachers(teachersData);
     } catch (err: any) {
@@ -491,16 +526,10 @@ function StudentsPage() {
   }, []);
 
   const handleSaveNewStudent = async (studentData: any) => {
-    const response = await fetch("/api/admin/add-student/", {
+    await apiFetch("/api/admin/add-student/", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify(studentData),
     });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to add student.");
-    }
     setIsAddModalOpen(false);
     await fetchData();
   };
@@ -510,21 +539,27 @@ function StudentsPage() {
     shift: string;
   }) => {
     if (!selectedStudent) return;
-    const response = await fetch(
+    await apiFetch(
       `/api/admin/students/${selectedStudent.id}/assign`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(assignmentData),
       }
     );
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to assign student.");
-    }
     setSelectedStudent(null);
     await fetchData();
+  };
+
+  const handleDeleteStudent = async (studentId: number) => {
+    try {
+      await apiFetch(`/api/admin/students/${studentId}`, {
+        method: "DELETE",
+      });
+      setSelectedStudent(null);
+      await fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   const filteredStudents = useMemo(() => {
@@ -585,183 +620,183 @@ function StudentsPage() {
 
   return (
     <Suspense>
-    <div className="p-6 sm:p-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{viewTitles[view]}</h1>
-          <p className="text-gray-500">
-            Manage students based on their status.
-          </p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90"
-          >
-            <UserPlus className="w-5 h-5 mr-2" />
-            Add Student
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-4">
-        <div>
-          <label htmlFor="courseFilter" className="block text-sm font-medium">
-            Filter by Course
-          </label>
-          <select
-            id="courseFilter"
-            value={courseFilter}
-            onChange={(e) => setCourseFilter(e.target.value)}
-            className="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"
-          >
-            <option value="all">All Courses</option>
-            {courses.map((course) => (
-              <option key={course} value={course}>
-                {course}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="genderFilter" className="block text-sm font-medium">
-            Filter by Gender
-          </label>
-          <select
-            id="genderFilter"
-            value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
-            className="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"
-          >
-            <option value="all">All Genders</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-          </select>
-        </div>
-        {view === "all" && (
+      <div className="p-6 sm:p-10">
+        <div className="flex items-center justify-between">
           <div>
-            <label htmlFor="statusFilter" className="block text-sm font-medium">
-              Filter by Status
-            </label>
-            <select
-              id="statusFilter"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"
-            >
-              <option value="all">All</option>
-              <option value="Approved">Approved</option>
-              <option value="Finished">Finished</option>
-            </select>
+            <h1 className="text-3xl font-bold">{viewTitles[view]}</h1>
+            <p className="text-gray-500">
+              Manage students based on their status.
+            </p>
           </div>
-        )}
-        {view === "unassigned" && (
-          <div>
-            <label
-              htmlFor="countryFilter"
-              className="block text-sm font-medium"
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90"
             >
-              Filter by Country
+              <UserPlus className="w-5 h-5 mr-2" />
+              Add Student
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-4">
+          <div>
+            <label htmlFor="courseFilter" className="block text-sm font-medium">
+              Filter by Course
             </label>
             <select
-              id="countryFilter"
-              value={countryFilter}
-              onChange={(e) => setCountryFilter(e.target.value)}
+              id="courseFilter"
+              value={courseFilter}
+              onChange={(e) => setCourseFilter(e.target.value)}
               className="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"
             >
-              <option value="all">All Countries</option>
-              {countries.map((country) => (
-                <option key={country} value={country}>
-                  {country}
+              <option value="all">All Courses</option>
+              {courses.map((course) => (
+                <option key={course} value={course}>
+                  {course}
                 </option>
               ))}
             </select>
           </div>
-        )}
-      </div>
+          <div>
+            <label htmlFor="genderFilter" className="block text-sm font-medium">
+              Filter by Gender
+            </label>
+            <select
+              id="genderFilter"
+              value={genderFilter}
+              onChange={(e) => setGenderFilter(e.target.value)}
+              className="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"
+            >
+              <option value="all">All Genders</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+          {view === "all" && (
+            <div>
+              <label htmlFor="statusFilter" className="block text-sm font-medium">
+                Filter by Status
+              </label>
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"
+              >
+                <option value="all">All</option>
+                <option value="Approved">Approved</option>
+                <option value="Finished">Finished</option>
+              </select>
+            </div>
+          )}
+          {view === "unassigned" && (
+            <div>
+              <label
+                htmlFor="countryFilter"
+                className="block text-sm font-medium"
+              >
+                Filter by Country
+              </label>
+              <select
+                id="countryFilter"
+                value={countryFilter}
+                onChange={(e) => setCountryFilter(e.target.value)}
+                className="mt-1 block w-full pl-3 pr-10 py-2 border rounded-md"
+              >
+                <option value="all">All Countries</option>
+                {countries.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
 
-      <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase bg-gray-50">
-            <tr>
-              <th className="px-6 py-3">Student Name</th>
-              <th className="px-6 py-3">Age</th>
-              <th className="px-6 py-3">Gender</th>
-              <th className="px-6 py-3">Parent Name</th>
-              <th className="px-6 py-3">Phone</th>
-              <th className="px-6 py-3">Country</th>
-              <th className="px-6 py-3">State</th>
-              <th className="px-6 py-3">Course</th>
-              <th className="px-6 py-3">Shift</th>
-              <th className="px-6 py-3">Assigned Teacher</th>
-              <th className="px-6 py-3">Status</th>
-              <th className="px-6 py-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredStudents.map((student) => (
-              <tr key={student.id} className="border-b hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium whitespace-nowrap">
-                  {`${student.first_name} ${student.last_name}`}
-                  <p className="text-xs text-gray-500">{student.email}</p>
-                </td>
-                <td className="px-6 py-4">{student.age}</td>
-                <td className="px-6 py-4">{student.gender}</td>
-                <td className="px-6 py-4">{student.parent_name}</td>
-                <td className="px-6 py-4">{student.phone_number}</td>
-                <td className="px-6 py-4">{student.country}</td>
-                <td className="px-6 py-4">{student.state || "N/A"}</td>
-                <td className="px-6 py-4">{student.preferred_course}</td>
-                <td className="px-6 py-4">{student.shift || "N/A"}</td>
-                <td className="px-6 py-4">{student.teacher?.name || "N/A"}</td>
-                <td className="px-6 py-4">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      student.status === "Approved"
+        <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
+          <table className="w-full text-sm text-left">
+            <thead className="text-xs uppercase bg-gray-50">
+              <tr>
+                <th className="px-6 py-3">Student Name</th>
+                <th className="px-6 py-3">Age</th>
+                <th className="px-6 py-3">Gender</th>
+                <th className="px-6 py-3">Parent Name</th>
+                <th className="px-6 py-3">Phone</th>
+                <th className="px-6 py-3">Country</th>
+                <th className="px-6 py-3">State</th>
+                <th className="px-6 py-3">Course</th>
+                <th className="px-6 py-3">Shift</th>
+                <th className="px-6 py-3">Assigned Teacher</th>
+                <th className="px-6 py-3">Status</th>
+                <th className="px-6 py-3">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredStudents.map((student) => (
+                <tr key={student.id} className="border-b hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium whitespace-nowrap">
+                    {`${student.first_name} ${student.last_name}`}
+                    <p className="text-xs text-gray-500">{student.email}</p>
+                  </td>
+                  <td className="px-6 py-4">{student.age}</td>
+                  <td className="px-6 py-4">{student.gender}</td>
+                  <td className="px-6 py-4">{student.parent_name}</td>
+                  <td className="px-6 py-4">{student.phone_number}</td>
+                  <td className="px-6 py-4">{student.country}</td>
+                  <td className="px-6 py-4">{student.state || "N/A"}</td>
+                  <td className="px-6 py-4">{student.preferred_course}</td>
+                  <td className="px-6 py-4">{student.shift || "N/A"}</td>
+                  <td className="px-6 py-4">{student.teacher?.name || "N/A"}</td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${student.status === "Approved"
                         ? "bg-green-100 text-green-800"
                         : student.status === "Finished"
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-yellow-100 text-yellow-800"
-                    }`}
-                  >
-                    {student.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => setSelectedStudent(student)}
-                    className="font-medium text-primary hover:underline"
-                  >
-                    Manage
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {filteredStudents.length === 0 && (
-          <div className="text-center p-8">
-            No students match the current filters.
-          </div>
+                          ? "bg-gray-100 text-gray-800"
+                          : "bg-yellow-100 text-yellow-800"
+                        }`}
+                    >
+                      {student.status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => setSelectedStudent(student)}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      Manage
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {filteredStudents.length === 0 && (
+            <div className="text-center p-8">
+              No students match the current filters.
+            </div>
+          )}
+        </div>
+
+        <AddStudentModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onSave={handleSaveNewStudent}
+          courses={courses}
+        />
+        {selectedStudent && (
+          <ManageStudentModal
+            isOpen={!!selectedStudent}
+            onClose={() => setSelectedStudent(null)}
+            student={selectedStudent}
+            teachers={teachers}
+            onSave={handleUpdateStudent}
+            onDelete={handleDeleteStudent}
+          />
         )}
       </div>
-
-      <AddStudentModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleSaveNewStudent}
-        courses={courses}
-      />
-      {selectedStudent && (
-        <ManageStudentModal
-          isOpen={!!selectedStudent}
-          onClose={() => setSelectedStudent(null)}
-          student={selectedStudent}
-          teachers={teachers}
-          onSave={handleUpdateStudent}
-        />
-      )}
-    </div>
     </Suspense>
   );
 }

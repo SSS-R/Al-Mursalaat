@@ -57,8 +57,8 @@ class Application(Base):
     # Timestamps are handled automatically by the database
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    attendances = relationship("Attendance", back_populates="student")
-    schedule = relationship("Schedule", back_populates="student", uselist=False)
+    attendances = relationship("Attendance", back_populates="student", cascade="all, delete-orphan")
+    schedules = relationship("Schedule", back_populates="student", cascade="all, delete-orphan")
 
 class User(Base):
     """
@@ -128,5 +128,5 @@ class Schedule(Base):
     student_id = Column(Integer, ForeignKey("applications.id"), nullable=False)
     teacher_id = Column(Integer, ForeignKey("teachers.id"), nullable=False)
 
-    student = relationship("Application", back_populates="schedule")
+    student = relationship("Application", back_populates="schedules")
     teacher = relationship("Teacher", back_populates="schedules")

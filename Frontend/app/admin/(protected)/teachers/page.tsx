@@ -3,7 +3,9 @@
 import { useState, useEffect, FormEvent } from "react";
 import { UserPlus, Trash2, X, FileText, Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
+
 import { useUser } from "@/app/context/UserContext";
+import { apiFetch } from "@/lib/api";
 
 // --- Types ---
 interface Teacher {
@@ -364,11 +366,7 @@ export default function TeachersPage() {
 
   const fetchTeachers = async () => {
     try {
-      const response = await fetch("/api/admin/teachers/", {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch teachers.");
-      const teachersData: Teacher[] = await response.json();
+      const teachersData = await apiFetch<Teacher[]>("/api/admin/teachers/");
       setTeachers(teachersData);
     } catch (err: any) {
       setError(err.message);
@@ -390,17 +388,17 @@ export default function TeachersPage() {
   }, []);
 
   const handleSaveTeacher = async (teacherData: any) => {
-    const response = await fetch("/api/admin/teachers/", {
-      method: "POST",
-      credentials: "include",
-      body: teacherData, // FormData is sent directly without Content-Type header
-    });
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.detail || "Failed to create teacher.");
+    try {
+      await apiFetch("/api/admin/teachers/", {
+        method: "POST",
+        body: teacherData, // apiFetch handles FormData Content-Type automatically
+      });
+      setIsModalOpen(false);
+      await fetchTeachers();
+    } catch (err: any) {
+      // Re-throw or handle error to stop execution
+      throw err;
     }
-    setIsModalOpen(false);
-    await fetchTeachers();
   };
 
   const handleDeleteTeacher = async (teacherId: number) => {
@@ -408,17 +406,9 @@ export default function TeachersPage() {
       return;
     }
     try {
-      const response = await fetch(
-        `/api/admin/teachers/${teacherId}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to delete teacher.");
-      }
+      await apiFetch(`/api/admin/teachers/${teacherId}`, {
+        method: "DELETE",
+      });
       alert("Teacher deleted successfully.");
       setTeachers((currentTeachers) =>
         currentTeachers.filter((t) => t.id !== teacherId)
