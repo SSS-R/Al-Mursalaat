@@ -8,23 +8,14 @@ import secrets, string
 
 # CRUD (Create, Read, Update, Delete) functions interact directly with the database.
 
-pwd_context= CryptContext(schemes=["bcrypt"], deprecated= "auto")
+pwd_context = CryptContext(schemes=["argon2", "bcrypt"], deprecated="auto")
 
 def get_password_hash(password):
     password_bytes = password.encode('utf-8')
-    # Truncate character by character to avoid breaking multi-byte characters
-    while len(password_bytes) > 72:
-        password = password[:-1]
-        password_bytes = password.encode('utf-8')
     return pwd_context.hash(password)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifies a plain text password against a hashed password."""
-    # Truncate the plain password the same way before verification
-    password_bytes = plain_password.encode('utf-8')
-    while len(password_bytes) > 72:
-        plain_password = plain_password[:-1]
-        password_bytes = plain_password.encode('utf-8')
     return pwd_context.verify(plain_password, hashed_password)
 
 def update_password(db: Session, user_obj, new_password: str):
