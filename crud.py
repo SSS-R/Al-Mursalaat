@@ -37,6 +37,19 @@ def create_user(db: Session, user: schemas.UserCreate, password: str):
     db.refresh(db_user)
     return db_user
 
+def update_user(db: Session, user_id: int, user_update_data: dict):
+    """Updates a user record."""
+    db_user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not db_user:
+        return None
+    
+    for key, value in user_update_data.items():
+        setattr(db_user, key, value)
+
+    db.commit()
+    db.refresh(db_user)
+    return db_user
+
 # --- COURSE CRUD (NEW) ---
 def create_course(db: Session, course: schemas.CourseCreate):
     """Creates one of the 4 course types."""
@@ -121,6 +134,19 @@ def delete_teacher(db: Session, teacher_id: int):
     if db_teacher:
         db.delete(db_teacher)
         db.commit()
+    return db_teacher
+
+def update_teacher(db: Session, teacher_id: int, teacher_update_data: dict):
+    """Updates a teacher record."""
+    db_teacher = db.query(models.Teacher).filter(models.Teacher.id == teacher_id).first()
+    if not db_teacher:
+        return None
+    
+    for key, value in teacher_update_data.items():
+        setattr(db_teacher, key, value)
+
+    db.commit()
+    db.refresh(db_teacher)
     return db_teacher
 
 def assign_teacher_and_shift(db: Session, student_id: int, teacher_id: int, shift: str):

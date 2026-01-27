@@ -46,6 +46,8 @@ class UserBase(BaseModel):
     phone_number: str
     gender: str
     whatsapp_number: Optional[str] = None
+    profile_photo_url: Optional[str] = None
+    cv_url: Optional[str] = None
 
 class TeacherBase(BaseModel):
     name: str
@@ -80,6 +82,11 @@ class ScheduleUpdate(BaseModel):
 class Schedule(ScheduleBase):
     id: int
     # REMOVED student to prevent recursion (Application -> schedules -> Schedule -> student -> Application...)
+    class Config:
+        from_attributes = True
+
+class ScheduleWithStudent(Schedule):
+    student: 'Application'
     class Config:
         from_attributes = True
 
@@ -152,7 +159,7 @@ class Application(ApplicationBase):
 class TeacherWithStudents(Teacher):
     # This tells Pydantic to expect a nested list of Application objects.
     students: List['Application'] = []
-    schedules: List['Schedule']
+    schedules: List['ScheduleWithStudent']
     class Config:
         from_attributes = True
 
@@ -182,3 +189,4 @@ class ForgetPasswordRequest(BaseModel):
 Application.model_rebuild()
 TeacherWithStudents.model_rebuild()
 Schedule.model_rebuild()
+ScheduleWithStudent.model_rebuild()

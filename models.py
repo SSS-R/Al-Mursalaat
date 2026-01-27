@@ -75,6 +75,8 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     gender = Column(String)
     role = Column(String, default="admin") # e.g., 'admin' or 'supreme-admin'
+    profile_photo_url = Column(String, nullable=True)
+    cv_url = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 class Teacher(Base):

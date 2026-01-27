@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, FormEvent, Suspense } from 'react';
-import { UserPlus, Trash2, X } from 'lucide-react';
+import { UserPlus, Trash2, X, FileText, Eye, Pencil } from 'lucide-react';
 import { apiFetch } from '@/lib/api';
 
 // --- Types ---
@@ -12,6 +12,8 @@ interface AdminUser {
     role: string;
     phone_number: string;
     gender: string;
+    profile_photo_url?: string;
+    cv_url?: string;
 }
 
 // --- Add Admin Modal Component ---
@@ -21,7 +23,9 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
     const [phone, setPhone] = useState('');
     const [isWhatsappDifferent, setIsWhatsappDifferent] = useState(false);
     const [whatsapp, setWhatsapp] = useState('');
-    const [gender, setGender] = useState(''); // New state for gender
+    const [gender, setGender] = useState('');
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [cv, setCV] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -29,16 +33,20 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
         e.preventDefault();
         setIsLoading(true);
         setError(null);
-        const adminData = {
-            name,
-            email,
-            gender, // Add gender to the data object
-            phone_number: phone,
-            whatsapp_number: isWhatsappDifferent ? whatsapp : phone,
-            role: 'admin',
-        };
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("gender", gender);
+        formData.append("phone_number", phone);
+        formData.append("whatsapp_number", isWhatsappDifferent ? whatsapp : phone);
+        formData.append("role", "admin");
+
+        if (photo) formData.append("photo", photo);
+        if (cv) formData.append("cv", cv);
+
         try {
-            await onSave(adminData);
+            await onSave(formData);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -56,45 +64,140 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
                         <h3 className="text-lg font-semibold">Add New Admin</h3>
                         <button type="button" onClick={onClose}><X size={20} /></button>
                     </div>
-                    <div className="p-6 space-y-4">
+                    <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                         {error && <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>}
+
+                        <div><label className="block text-sm font-medium">Full Name *</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" /></div>
+                        <div><label className="block text-sm font-medium">Email Address *</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" /></div>
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium">Full Name *</label>
-                            <input type="text" name="name" id="name" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
-                        </div>
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium">Email Address *</label>
-                            <input type="email" name="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
-                        </div>
-                        {/* New Gender Field */}
-                        <div>
-                            <label htmlFor="gender" className="block text-sm font-medium">Gender *</label>
-                            <select name="gender" id="gender" value={gender} onChange={(e) => setGender(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
-                                <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
+                            <label className="block text-sm font-medium">Gender *</label>
+                            <select value={gender} onChange={(e) => setGender(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                                <option value="">Select Gender</option><option value="Male">Male</option><option value="Female">Female</option>
                             </select>
                         </div>
-                        <div>
-                            <label htmlFor="phone" className="block text-sm font-medium">Phone Number *</label>
-                            <input type="tel" name="phone" id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
-                        </div>
+                        <div><label className="block text-sm font-medium">Phone Number *</label><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" /></div>
+
                         <div className="flex items-center">
-                            <input type="checkbox" id="whatsapp-check" checked={isWhatsappDifferent} onChange={(e) => setIsWhatsappDifferent(e.target.checked)} className="h-4 w-4 rounded" />
-                            <label htmlFor="whatsapp-check" className="ml-2 block text-sm">WhatsApp number is different</label>
+                            <input type="checkbox" checked={isWhatsappDifferent} onChange={(e) => setIsWhatsappDifferent(e.target.checked)} className="h-4 w-4 rounded" />
+                            <label className="ml-2 block text-sm">WhatsApp number is different</label>
                         </div>
                         {isWhatsappDifferent && (
-                            <div>
-                                <label htmlFor="whatsapp" className="block text-sm font-medium">WhatsApp Number *</label>
-                                <input type="tel" name="whatsapp" id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
-                            </div>
+                            <div><label className="block text-sm font-medium">WhatsApp Number *</label><input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" /></div>
                         )}
+
+                        <div>
+                            <label className="block text-sm font-medium">Photo (Optional)</label>
+                            <input type="file" accept="image/*" onChange={e => setPhoto(e.target.files?.[0] || null)} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">CV (Optional)</label>
+                            <input type="file" accept=".pdf" onChange={e => setCV(e.target.files?.[0] || null)} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        </div>
                     </div>
                     <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
                         <button type="button" onClick={onClose} className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600">Cancel</button>
-                        <button type="submit" disabled={isLoading} className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">
-                            {isLoading ? 'Saving...' : 'Save Admin'}
-                        </button>
+                        <button type="submit" disabled={isLoading} className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">{isLoading ? 'Saving...' : 'Save Admin'}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// --- Edit Admin Modal ---
+function EditAdminModal({ isOpen, onClose, admin, onUpdate }: { isOpen: boolean; onClose: () => void; admin: AdminUser | null; onUpdate: (id: number, data: any) => Promise<void>; }) {
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState(''); // Email usually not editable for admins/users without more logic? Let's allow it.
+    const [phone, setPhone] = useState('');
+    const [gender, setGender] = useState('');
+    const [whatsapp, setWhatsapp] = useState('');
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [cv, setCV] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (admin) {
+            setName(admin.name);
+            setEmail(admin.email);
+            setPhone(admin.phone_number);
+            setGender(admin.gender);
+            setWhatsapp(admin.phone_number); // Defaulting
+            setPhotoPreview(admin.profile_photo_url || null);
+            setPhoto(null);
+            setCV(null);
+            setError(null);
+        }
+    }, [admin, isOpen]);
+
+    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setPhoto(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setPhotoPreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
+        if (!admin) return;
+        setIsLoading(true);
+        setError(null);
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("phone_number", phone);
+        formData.append("gender", gender);
+        formData.append("whatsapp_number", whatsapp);
+
+        if (photo) formData.append("photo", photo);
+        if (cv) formData.append("cv", cv);
+
+        try {
+            await onUpdate(admin.id, formData);
+            onClose();
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (!isOpen || !admin) return null;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-lg w-full">
+                <form onSubmit={handleSubmit}>
+                    <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                        <h3 className="text-lg font-semibold">Edit Admin</h3>
+                        <button type="button" onClick={onClose}><X size={20} /></button>
+                    </div>
+                    <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                        {error && <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>}
+
+                        <div><label className="block text-sm font-medium">Full Name</label><input type="text" value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" /></div>
+                        <div><label className="block text-sm font-medium">Email</label><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" /></div>
+                        <div><label className="block text-sm font-medium">Phone</label><input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" /></div>
+                        <div><label className="block text-sm font-medium">Gender</label><select value={gender} onChange={(e) => setGender(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"><option value="Male">Male</option><option value="Female">Female</option></select></div>
+
+                        <div>
+                            <label className="block text-sm font-medium">Update Photo (Optional)</label>
+                            {photoPreview && <img src={photoPreview} alt="Preview" className="w-16 h-16 object-cover rounded mb-2" />}
+                            <input type="file" accept="image/*" onChange={handlePhotoChange} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium">Update CV (Optional)</label>
+                            <input type="file" accept=".pdf" onChange={e => setCV(e.target.files?.[0] || null)} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                        </div>
+                    </div>
+                    <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
+                        <button type="button" onClick={onClose} className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600">Cancel</button>
+                        <button type="submit" disabled={isLoading} className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">{isLoading ? 'Updating...' : 'Update Admin'}</button>
                     </div>
                 </form>
             </div>
@@ -108,6 +211,8 @@ export default function AdminManagementPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
 
     const fetchAdmins = async () => {
         setIsLoading(true);
@@ -126,13 +231,28 @@ export default function AdminManagementPage() {
     }, []);
 
     const handleSaveAdmin = async (adminData: any) => {
-        await apiFetch('/api/admin/create-admin/', {
-            method: 'POST',
-            body: JSON.stringify(adminData),
-        });
+        try {
+            await apiFetch('/api/admin/create-admin/', {
+                method: 'POST',
+                body: adminData, // formData
+            });
+            setIsModalOpen(false);
+            fetchAdmins();
+        } catch (err: any) {
+            throw err;
+        }
+    };
 
-        setIsModalOpen(false);
-        fetchAdmins();
+    const handleUpdateAdmin = async (id: number, data: any) => {
+        try {
+            await apiFetch(`/api/admin/users/${id}`, {
+                method: 'PATCH',
+                body: data,
+            });
+            fetchAdmins();
+        } catch (err: any) {
+            throw err;
+        }
     };
 
     const handleDelete = async (userId: number) => {
@@ -143,7 +263,6 @@ export default function AdminManagementPage() {
             await apiFetch(`/api/admin/users/${userId}`, {
                 method: 'DELETE',
             });
-
             alert('Admin deleted successfully.');
             setAdmins(currentAdmins => currentAdmins.filter(admin => admin.id !== userId));
         } catch (err: any) {
@@ -151,8 +270,10 @@ export default function AdminManagementPage() {
         }
     };
 
-    if (isLoading) return <div className="p-10">Loading admins...</div>;
-    if (error) return <div className="p-10 text-red-500">Error: {error}</div>;
+    const openEdit = (admin: AdminUser) => {
+        setSelectedAdmin(admin);
+        setEditModalOpen(true);
+    };
 
     return (
         <Suspense>
@@ -193,9 +314,17 @@ export default function AdminManagementPage() {
                                     </td>
                                     <td className="px-6 py-4">{admin.phone_number}</td>
                                     <td className="px-6 py-4">
-                                        <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 hover:underline">
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            {admin.profile_photo_url && (
+                                                <a href={admin.profile_photo_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline"><Eye className="w-4 h-4" /></a>
+                                            )}
+                                            {admin.cv_url && (
+                                                <a href={admin.cv_url} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline"><FileText className="w-4 h-4" /></a>
+                                            )}
+                                            {/* Allow editing of admins, maybe restricted to Supreme Admin? Requirement said "from the creation... or patch via supreme admin" */}
+                                            <button onClick={() => openEdit(admin)} className="font-medium text-yellow-600 hover:underline"><Pencil className="w-4 h-4" /></button>
+                                            <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 hover:underline"><Trash2 className="w-4 h-4" /></button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -204,6 +333,7 @@ export default function AdminManagementPage() {
                 </div>
 
                 <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
+                <EditAdminModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} admin={selectedAdmin} onUpdate={handleUpdateAdmin} />
             </div>
         </Suspense>
     );

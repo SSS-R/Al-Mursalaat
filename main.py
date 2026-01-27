@@ -253,17 +253,105 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), c
     return users
 
 @app.post("/api/admin/create-admin/", response_model=schemas.User, status_code=201)
-def create_admin_user(user: schemas.UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+async def create_admin_user(
+    name: str = Form(...),
+    email: str = Form(...),
+    phone_number: str = Form(...),
+    gender: str = Form(...),
+    whatsapp_number: Optional[str] = Form(None),
+    role: str = Form("admin"), # Default to admin, but supreme-admin can set it? Actually logic sets it to 'admin' via schema usually but let's allow flexibility or default.
+    photo: Optional[UploadFile] = File(None),
+    cv: Optional[UploadFile] = File(None),
+    background_tasks: BackgroundTasks = None,
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    # Initialize background tasks if not provided
+    if background_tasks is None:
+        background_tasks = BackgroundTasks()
+
     if current_admin.role != "supreme-admin":
         raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
-    db_user = crud.get_user_by_email(db, email=user.email)
+    
+    db_user = crud.get_user_by_email(db, email=email)
     if db_user:
         raise HTTPException(status_code=400, detail="An admin with this email already exists.")
+    
+    # Handle optional file uploads
+    photo_url = None
+    cv_url = None
+    if photo:
+        photo_url = await file_handler.save_teacher_photo(photo) # Reusing this function as logic is same
+    if cv:
+        cv_url = await file_handler.save_teacher_cv(cv) # Reusing this function
+        
     alphabet = string.ascii_letters + string.digits
     temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
-    new_user = crud.create_user(db=db, user=user, password=temp_password)
+    
+    # Construct UserCreate schema manually
+    user_schema = schemas.UserCreate(
+        name=name,
+        email=email,
+        phone_number=phone_number,
+        gender=gender,
+        whatsapp_number=whatsapp_number,
+        role=role, 
+        profile_photo_url=photo_url,
+        cv_url=cv_url
+    )
+    
+    new_user = crud.create_user(db=db, user=user_schema, password=temp_password)
     background_tasks.add_task(email_sender.send_admin_credentials_email, admin_data=schemas.User.from_orm(new_user).model_dump(), temp_password=temp_password)
     return new_user
+
+@app.patch("/api/admin/users/{user_id}", response_model=schemas.User)
+async def update_admin_user(
+    user_id: int,
+    name: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    gender: Optional[str] = Form(None),
+    whatsapp_number: Optional[str] = Form(None),
+    photo: Optional[UploadFile] = File(None),
+    cv: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    if current_admin.role != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+
+    db_user = crud.get_user(db, user_id=user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    update_data = {}
+    if name: update_data['name'] = name
+    if email: update_data['email'] = email
+    if phone_number: update_data['phone_number'] = phone_number
+    if gender: update_data['gender'] = gender
+    if whatsapp_number: update_data['whatsapp_number'] = whatsapp_number
+
+    # Handle Photo Re-upload
+    if photo:
+        if db_user.profile_photo_url:
+            file_handler.delete_teacher_photo(db_user.profile_photo_url)
+        new_photo_url = await file_handler.save_teacher_photo(photo)
+        if new_photo_url:
+            update_data['profile_photo_url'] = new_photo_url
+
+    # Handle CV Re-upload
+    if cv:
+        if db_user.cv_url:
+            file_handler.delete_teacher_cv(db_user.cv_url)
+        new_cv_url = await file_handler.save_teacher_cv(cv)
+        if new_cv_url:
+            update_data['cv_url'] = new_cv_url
+
+    if not update_data and not photo and not cv:
+        return db_user
+
+    updated_user = crud.update_user(db=db, user_id=user_id, user_update_data=update_data)
+    return updated_user
 
 @app.delete("/api/admin/users/{user_id}", response_model=schemas.User)
 def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
@@ -398,7 +486,63 @@ async def create_new_teacher(
     temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
     new_teacher = crud.create_teacher(db=db, teacher=teacher_data, password=temp_password)
     background_tasks.add_task(email_sender.send_teacher_credentials_email, teacher_data=schemas.Teacher.from_orm(new_teacher).model_dump(), temp_password=temp_password)
+    background_tasks.add_task(email_sender.send_teacher_credentials_email, teacher_data=schemas.Teacher.from_orm(new_teacher).model_dump(), temp_password=temp_password)
     return new_teacher
+
+@app.patch("/api/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
+async def update_teacher_details(
+    teacher_id: int,
+    name: Optional[str] = Form(None),
+    email: Optional[str] = Form(None),
+    phone_number: Optional[str] = Form(None),
+    shift: Optional[str] = Form(None),
+    gender: Optional[str] = Form(None),
+    whatsapp_number: Optional[str] = Form(None),
+    photo: Optional[UploadFile] = File(None),
+    cv: Optional[UploadFile] = File(None),
+    db: Session = Depends(get_db),
+    current_admin: dict = Depends(get_current_admin)
+):
+    if current_admin.role != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+
+    db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
+    if not db_teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found.")
+
+    update_data = {}
+    if name: update_data['name'] = name
+    if email: update_data['email'] = email
+    if phone_number: update_data['phone_number'] = phone_number
+    if shift: update_data['shift'] = shift
+    if gender: update_data['gender'] = gender
+    if whatsapp_number: update_data['whatsapp_number'] = whatsapp_number
+
+    # Handle Photo Re-upload
+    if photo:
+        # Delete old photo if exists
+        if db_teacher.profile_photo_url:
+            file_handler.delete_teacher_photo(db_teacher.profile_photo_url)
+        # Upload new photo
+        new_photo_url = await file_handler.save_teacher_photo(photo)
+        if new_photo_url:
+            update_data['profile_photo_url'] = new_photo_url
+
+    # Handle CV Re-upload
+    if cv:
+        # Delete old CV if exists
+        if db_teacher.cv_url:
+            file_handler.delete_teacher_cv(db_teacher.cv_url)
+        # Upload new CV
+        new_cv_url = await file_handler.save_teacher_cv(cv)
+        if new_cv_url:
+            update_data['cv_url'] = new_cv_url
+
+    if not update_data and not photo and not cv:
+        return db_teacher # Nothing to update
+
+    updated_teacher = crud.update_teacher(db=db, teacher_id=teacher_id, teacher_update_data=update_data)
+    return updated_teacher
 
 @app.delete("/api/admin/teachers/{teacher_id}", response_model=schemas.Teacher)
 def delete_a_teacher(teacher_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):

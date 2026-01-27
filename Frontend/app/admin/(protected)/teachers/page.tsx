@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { UserPlus, Trash2, X, FileText, Eye } from "lucide-react";
+import { UserPlus, Trash2, X, FileText, Eye, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { useUser } from "@/app/context/UserContext";
@@ -348,6 +348,215 @@ function AddTeacherModal({
   );
 }
 
+
+// --- Edit Teacher Modal Component ---
+function EditTeacherModal({
+  isOpen,
+  onClose,
+  teacher,
+  onUpdate,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  teacher: Teacher | null;
+  onUpdate: (teacherId: number, data: any) => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [gender, setGender] = useState("");
+  const [shift, setShift] = useState("");
+
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [cv, setCV] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (teacher) {
+      setName(teacher.name);
+      setEmail(teacher.email);
+      setPhone(teacher.phone_number);
+      // Assuming whatsapp might be same as phone if not in teacher object explicitly or handled differently
+      setWhatsapp(teacher.phone_number);
+      setGender(teacher.gender);
+      setShift(teacher.shift);
+      setPhotoPreview(teacher.profile_photo_url || null);
+      setPhoto(null);
+      setCV(null);
+      setError(null);
+    }
+  }, [teacher, isOpen]);
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setError("Photo must be an image file");
+      return;
+    }
+    if (file.size > 5242880) { // 5MB
+      setError("Photo must be 5MB or smaller");
+      return;
+    }
+
+    setPhoto(file);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.onloadend = () => setPhotoPreview(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleCVChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+      setError("CV must be a PDF file");
+      return;
+    }
+    if (file.size > 10485760) { // 10MB
+      setError("CV must be 10MB or smaller");
+      return;
+    }
+    setCV(file);
+    setError(null);
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!teacher) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("gender", gender);
+    formData.append("shift", shift);
+    formData.append("phone_number", phone);
+    formData.append("whatsapp_number", whatsapp);
+
+    if (photo) formData.append("photo", photo);
+    if (cv) formData.append("cv", cv);
+
+    try {
+      await onUpdate(teacher.id, formData);
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen || !teacher) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-lg w-full">
+        <form onSubmit={handleSubmit}>
+          <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+            <h3 className="text-lg font-semibold">Edit Teacher</h3>
+            <button type="button" onClick={onClose}>
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            {error && <div className="p-3 text-red-700 bg-red-100 rounded">{error}</div>}
+
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium">Full Name</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block text-sm font-medium">Email</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-medium">Gender</label>
+              <select value={gender} onChange={e => setGender(e.target.value)} required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+
+            {/* Shift */}
+            <div>
+              <label className="block text-sm font-medium">Shift</label>
+              <select value={shift} onChange={e => setShift(e.target.value)} required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600">
+                <option value="Morning">Morning</option>
+                <option value="Evening">Evening</option>
+                <option value="Night">Afternoon</option>
+              </select>
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium">Phone</label>
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+            </div>
+
+            {/* WhatsApp */}
+            <div>
+              <label className="block text-sm font-medium">WhatsApp</label>
+              <input type="tel" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+            </div>
+
+            {/* Photo */}
+            <div>
+              <label className="block text-sm font-medium">Update Photo (Optional)</label>
+              {photoPreview && (
+                <div className="mt-2 mb-2">
+                  <img src={photoPreview} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />
+                </div>
+              )}
+              <input type="file" accept="image/*" onChange={handlePhotoChange}
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+            </div>
+
+            {/* CV */}
+            <div>
+              <label className="block text-sm font-medium">Update CV (Optional)</label>
+              <input type="file" accept=".pdf" onChange={handleCVChange}
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+              {cv && <p className="mt-1 text-sm text-green-600">New CV selected: {cv.name}</p>}
+            </div>
+
+          </div>
+          <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
+            <button type="button" onClick={onClose}
+              className="px-4 py-2 mr-2 text-sm bg-white border rounded-md hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600">
+              Cancel
+            </button>
+            <button type="submit" disabled={isLoading}
+              className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50">
+              {isLoading ? "Updating..." : "Update Teacher"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // --- Main Page Component ---
 export default function TeachersPage() {
   const user = useUser();
@@ -358,6 +567,8 @@ export default function TeachersPage() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [photoModalOpen, setPhotoModalOpen] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [selectedTeacherPhoto, setSelectedTeacherPhoto] = useState<{
     url?: string;
     name: string;
@@ -391,14 +602,30 @@ export default function TeachersPage() {
     try {
       await apiFetch("/api/admin/teachers/", {
         method: "POST",
-        body: teacherData, // apiFetch handles FormData Content-Type automatically
+        body: teacherData,
       });
       setIsModalOpen(false);
       await fetchTeachers();
     } catch (err: any) {
-      // Re-throw or handle error to stop execution
       throw err;
     }
+  };
+
+  const handleUpdateTeacher = async (teacherId: number, teacherData: any) => {
+    try {
+      await apiFetch(`/api/admin/teachers/${teacherId}`, {
+        method: "PATCH",
+        body: teacherData,
+      });
+      await fetchTeachers(); // Refresh list
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const openEditModal = (teacher: Teacher) => {
+    setSelectedTeacher(teacher);
+    setEditModalOpen(true);
   };
 
   const handleDeleteTeacher = async (teacherId: number) => {
@@ -528,13 +755,22 @@ export default function TeachersPage() {
                       </button>
                     )}
                     {user?.role === "supreme-admin" && (
-                      <button
-                        onClick={() => handleDeleteTeacher(teacher.id)}
-                        className="font-medium text-red-600 dark:text-red-500 hover:underline"
-                        title="Delete Teacher"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <>
+                        <button
+                          onClick={() => openEditModal(teacher)}
+                          className="font-medium text-yellow-600 dark:text-yellow-500 hover:underline"
+                          title="Edit Teacher"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTeacher(teacher.id)}
+                          className="font-medium text-red-600 dark:text-red-500 hover:underline"
+                          title="Delete Teacher"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </>
                     )}
                   </div>
                 </td>
@@ -558,6 +794,12 @@ export default function TeachersPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveTeacher}
+      />
+      <EditTeacherModal
+        isOpen={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        teacher={selectedTeacher}
+        onUpdate={handleUpdateTeacher}
       />
     </div>
   );

@@ -24,7 +24,9 @@ async def save_teacher_photo(file: UploadFile) -> str:
         upload_result = cloudinary.uploader.upload(
             file.file,
             folder="teacher_photos",  # This creates a folder in your Cloudinary
-            resource_type="image"
+            resource_type="image",
+            type="upload",
+            access_mode="public"
         )
         return upload_result.get("secure_url")
     except Exception as e:
@@ -40,7 +42,9 @@ async def save_teacher_cv(file: UploadFile) -> str:
         upload_result = cloudinary.uploader.upload(
             file.file,
             folder="teacher_cvs",
-            resource_type="auto" 
+            resource_type="auto",
+            type="upload",
+            access_mode="public"
         )
         return upload_result.get("secure_url")
     except Exception as e:
