@@ -1125,12 +1125,12 @@ export default function HomePage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="country">state *</Label>
+                      <Label htmlFor="state">State *</Label>
                       <Input
-                        id="country"
-                        name="country"
+                        id="state"
+                        name="state"
                         type="text"
-                        placeholder="Enter your country"
+                        placeholder="Enter your state"
                         required
                         className="transition-all duration-300 focus:scale-105 focus:shadow-lg"
                       />
