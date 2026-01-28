@@ -24,6 +24,10 @@ const nextConfig = {
         source: '/submit-application',
         destination: 'http://127.0.0.1:8000/submit-application/',
       },
+      {
+        source: '/static/:path*',
+        destination: 'http://127.0.0.1:8000/static/:path*',
+      },
     ]
   },
 };

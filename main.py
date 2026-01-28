@@ -292,9 +292,9 @@ async def create_admin_user(
     photo_url = None
     cv_url = None
     if photo:
-        photo_url = await file_handler.save_teacher_photo(photo) # Reusing this function as logic is same
+        photo_url = await file_handler.save_admin_photo(photo)
     if cv:
-        cv_url = await file_handler.save_teacher_cv(cv) # Reusing this function
+        cv_url = await file_handler.save_admin_cv(cv)
         
     alphabet = string.ascii_letters + string.digits
     temp_password = ''.join(secrets.choice(alphabet) for i in range(10))
@@ -345,8 +345,8 @@ async def update_admin_user(
     # Handle Photo Re-upload
     if photo:
         if db_user.profile_photo_url:
-            file_handler.delete_teacher_photo(db_user.profile_photo_url)
-        new_photo_url = await file_handler.save_teacher_photo(photo)
+            file_handler.delete_teacher_photo(db_user.profile_photo_url) # Reusing delete because it's generic enough or add delete_admin_photo? Let's use delete_teacher_photo as it calls _delete_file_locally
+        new_photo_url = await file_handler.save_admin_photo(photo)
         if new_photo_url:
             update_data['profile_photo_url'] = new_photo_url
 
@@ -354,7 +354,7 @@ async def update_admin_user(
     if cv:
         if db_user.cv_url:
             file_handler.delete_teacher_cv(db_user.cv_url)
-        new_cv_url = await file_handler.save_teacher_cv(cv)
+        new_cv_url = await file_handler.save_admin_cv(cv)
         if new_cv_url:
             update_data['cv_url'] = new_cv_url
 

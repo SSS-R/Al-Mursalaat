@@ -16,6 +16,11 @@ TEACHER_CVS_DIR = UPLOADS_DIR / "teacher_cvs"
 TEACHER_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
 TEACHER_CVS_DIR.mkdir(parents=True, exist_ok=True)
 
+ADMIN_PHOTOS_DIR = UPLOADS_DIR / "admin_photos"
+ADMIN_CVS_DIR = UPLOADS_DIR / "admin_cvs"
+ADMIN_PHOTOS_DIR.mkdir(parents=True, exist_ok=True)
+ADMIN_CVS_DIR.mkdir(parents=True, exist_ok=True)
+
 async def _save_file_locally(file: UploadFile, directory: Path, subdir_name: str) -> str:
     """
     Saves a file locally with a unique name and returns the static URL.
@@ -51,6 +56,18 @@ async def save_teacher_cv(file: UploadFile) -> str:
     Saves a teacher CV locally and returns the URL.
     """
     return await _save_file_locally(file, TEACHER_CVS_DIR, "teacher_cvs")
+
+async def save_admin_photo(file: UploadFile) -> str:
+    """
+    Saves an admin photo locally and returns the URL.
+    """
+    return await _save_file_locally(file, ADMIN_PHOTOS_DIR, "admin_photos")
+
+async def save_admin_cv(file: UploadFile) -> str:
+    """
+    Saves an admin CV locally and returns the URL.
+    """
+    return await _save_file_locally(file, ADMIN_CVS_DIR, "admin_cvs")
 
 def delete_teacher_photo(photo_url: str):
     """
