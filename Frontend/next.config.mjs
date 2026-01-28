@@ -21,7 +21,7 @@ const nextConfig = {
         destination: 'http://127.0.0.1:8000/openapi.json',
       },
       {
-        source: '/submit-application/',
+        source: '/submit-application',
         destination: 'http://127.0.0.1:8000/submit-application/',
       },
     ]
