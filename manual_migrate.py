@@ -1,7 +1,4 @@
-import os
-# Force SQLite usage to migrate the local file
-os.environ["USE_SQLITE"] = "True"
-os.environ["DB_USER"] = ""
+# Migration script to add missing columns
 
 from database import engine
 from sqlalchemy import text
