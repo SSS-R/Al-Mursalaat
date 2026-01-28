@@ -522,7 +522,7 @@ function EditTeacherModal({
 
             {/* Photo */}
             <div>
-              <label className="block text-sm font-medium">Update Photo (Optional)</label>
+              <label className="block text-sm font-medium">Update Photo (Max 5MB)</label>
               {photoPreview && (
                 <div className="mt-2 mb-2">
                   <img src={photoPreview} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />
@@ -534,7 +534,7 @@ function EditTeacherModal({
 
             {/* CV */}
             <div>
-              <label className="block text-sm font-medium">Update CV (Optional)</label>
+              <label className="block text-sm font-medium">Update CV (Max 10MB)</label>
               <input type="file" accept=".pdf" onChange={handleCVChange}
                 className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
               {cv && <p className="mt-1 text-sm text-green-600">New CV selected: {cv.name}</p>}

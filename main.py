@@ -6,6 +6,8 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
 import os
+# Create uploads directory if it doesn't exist (safety check)
+os.makedirs("uploads", exist_ok=True)
 from dotenv import load_dotenv
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
@@ -168,6 +170,7 @@ app.add_middleware(
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "Frontend" / "public"
 app.mount("/bucket", StaticFiles(directory=str(STATIC_DIR / "bucket")), name="bucket")
+app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 def get_db():
     db = SessionLocal()

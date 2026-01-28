@@ -86,11 +86,11 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
                         )}
 
                         <div>
-                            <label className="block text-sm font-medium">Photo (Optional)</label>
+                            <label className="block text-sm font-medium">Photo (Optional - Max 5MB)</label>
                             <input type="file" accept="image/*" onChange={e => setPhoto(e.target.files?.[0] || null)} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium">CV (Optional)</label>
+                            <label className="block text-sm font-medium">CV (Optional - Max 10MB)</label>
                             <input type="file" accept=".pdf" onChange={e => setCV(e.target.files?.[0] || null)} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                     </div>
@@ -186,12 +186,12 @@ function EditAdminModal({ isOpen, onClose, admin, onUpdate }: { isOpen: boolean;
                         <div><label className="block text-sm font-medium">Gender</label><select value={gender} onChange={(e) => setGender(e.target.value)} required className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"><option value="Male">Male</option><option value="Female">Female</option></select></div>
 
                         <div>
-                            <label className="block text-sm font-medium">Update Photo (Optional)</label>
+                            <label className="block text-sm font-medium">Update Photo (Max 5MB)</label>
                             {photoPreview && <img src={photoPreview} alt="Preview" className="w-16 h-16 object-cover rounded mb-2" />}
                             <input type="file" accept="image/*" onChange={handlePhotoChange} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium">Update CV (Optional)</label>
+                            <label className="block text-sm font-medium">Update CV (Max 10MB)</label>
                             <input type="file" accept=".pdf" onChange={e => setCV(e.target.files?.[0] || null)} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                     </div>
