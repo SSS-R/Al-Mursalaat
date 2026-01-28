@@ -170,7 +170,7 @@ app.add_middleware(
 BASE_DIR = Path(__file__).parent
 STATIC_DIR = BASE_DIR / "Frontend" / "public"
 app.mount("/bucket", StaticFiles(directory=str(STATIC_DIR / "bucket")), name="bucket")
-app.mount("/static", StaticFiles(directory="uploads"), name="static")
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 def get_db():
     db = SessionLocal()

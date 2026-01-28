@@ -37,16 +37,14 @@ async def _save_file_locally(file: UploadFile, directory: Path, subdir_name: str
         await file.seek(0)
         content = await file.read()
         
-        print(f"DEBUG: Saving file {unique_filename} to {file_path}")
-        print(f"DEBUG: File Size: {len(content)} bytes")
         
         # Save file
         with open(file_path, "wb") as f:
             f.write(content)
             
-        # Return URL (mapped to /static in main.py)
-        # URL format: /static/subdir_name/filename
-        return f"/static/{subdir_name}/{unique_filename}"
+        # Return URL (mapped to /uploads in main.py)
+        # URL format: /uploads/subdir_name/filename
+        return f"/uploads/{subdir_name}/{unique_filename}"
         
     except Exception as e:
         print(f"Error saving file locally: {e}")
@@ -96,9 +94,9 @@ def _delete_file_locally(file_url: str):
         
     try:
         # Extract relative path from URL
-        # Assumption: URL starts with /static/
-        if file_url.startswith("/static/"):
-            relative_path = file_url.replace("/static/", "", 1)
+        # Assumption: URL starts with /uploads/
+        if file_url.startswith("/uploads/"):
+            relative_path = file_url.replace("/uploads/", "", 1)
             # Prevent directory traversal attacks (basic check)
             if ".." in relative_path:
                 print(f"Security Warning: Attempted directory traversal in delete: {file_url}")
