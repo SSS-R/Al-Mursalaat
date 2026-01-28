@@ -33,12 +33,16 @@ async def _save_file_locally(file: UploadFile, directory: Path, subdir_name: str
         
         file_path = directory / unique_filename
         
-        # Reset file pointer to the beginning to ensure we don't save an empty file
-        file.file.seek(0)
+        # Async read
+        await file.seek(0)
+        content = await file.read()
+        
+        print(f"DEBUG: Saving file {unique_filename} to {file_path}")
+        print(f"DEBUG: File Size: {len(content)} bytes")
         
         # Save file
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        with open(file_path, "wb") as f:
+            f.write(content)
             
         # Return URL (mapped to /static in main.py)
         # URL format: /static/subdir_name/filename
