@@ -212,6 +212,14 @@ def submit_application(application: schemas.ApplicationCreate, background_tasks:
         raise HTTPException(status_code=400, detail="Email already exists.")
     # Smart Link: Connects student to the Course Table automatically
     new_application = crud.create_application(db=db, application=application)
+    
+    # Prepare data for email
+    app_data = schemas.Application.from_orm(new_application).model_dump()
+    
+    # Send emails in background
+    background_tasks.add_task(email_sender.send_student_confirmation, application_data=app_data)
+    background_tasks.add_task(email_sender.send_admin_notification, application_data=app_data)
+    
     return new_application
 
 @app.post("/api/login")
