@@ -33,6 +33,9 @@ async def _save_file_locally(file: UploadFile, directory: Path, subdir_name: str
         
         file_path = directory / unique_filename
         
+        # Reset file pointer to the beginning to ensure we don't save an empty file
+        file.file.seek(0)
+        
         # Save file
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
