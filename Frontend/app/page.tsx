@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MobileMenu } from "@/components/MobileMenu";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -406,7 +407,7 @@ export default function HomePage() {
                 className="h-16 w-auto transition-transform duration-600 hover:scale-105 cursor-pointer"
               />
             </Link>
-            <nav className="hidden md:flex items-center space-x-8">
+            <nav className="hidden lg:flex items-center space-x-8">
               {["Home", "Courses", "About", "Admission", "Contact"].map(
                 (item, index) => (
                   <Link
@@ -421,11 +422,16 @@ export default function HomePage() {
                 )
               )}
             </nav>
-            <Link href="#admission">
-              <Button className="bg-primary hover:bg-primary/90 transform transition-all duration-300 hover:scale-105 hover:shadow-lg animate-bounce-subtle">
-                Apply Now
-              </Button>
-            </Link>
+            <div className="hidden lg:block">
+              <Link href="#admission">
+                <Button className="bg-primary hover:bg-primary/90 transform transition-all duration-300 hover:scale-105 hover:shadow-lg animate-bounce-subtle">
+                  Apply Now
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile Menu Trigger */}
+            <MobileMenu />
           </div>
         </div>
       </header>
@@ -433,7 +439,7 @@ export default function HomePage() {
       {/* Hero Section and other sections from your code */}
       <section
         id="home"
-        className="py-20 relative overflow-hidden min-h-[600px]"
+        className="py-12 md:py-20 relative overflow-hidden min-h-[500px] md:min-h-[600px]"
         style={{
           backgroundImage: `linear-gradient(rgba(19, 84, 71, 0.8), rgba(19, 84, 71, 0.6)), url('/images/mosque-interior.jpg')`,
           backgroundSize: "cover",
@@ -693,7 +699,7 @@ export default function HomePage() {
         </div>
       </section>
       {/* Teachers Section */}
-      <section className="py-20 bg-white" id="about">
+      <section className="py-20 bg-white" id="teachers">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16 animate-fade-in-up">
             <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
@@ -778,6 +784,7 @@ export default function HomePage() {
           </div>
           {/* Why Quranic Education is Important */}
           <div
+            id="about"
             className="mt-16 bg-gradient-to-r from-primary/5 to-secondary/5 rounded-2xl p-8 animate-fade-in-up shadow-xl"
             style={{ animationDelay: "600ms" }}
           >
@@ -1324,7 +1331,6 @@ export default function HomePage() {
                   "Quran Reading (Nazra)",
                   "Quran Learning (Kayda)",
                   "Quran Memorization (Hifz)",
-                  "Islamic Studies",
                 ],
               },
               {
@@ -1348,7 +1354,7 @@ export default function HomePage() {
                       {section.title === "Quick Links" ||
                         section.title === "Courses" ? (
                         <Link
-                          href={"#" + link.toLowerCase()}
+                          href={section.title === "Courses" ? "#courses" : "#" + link.toLowerCase()}
                           className="hover:text-white transition-all duration-300 hover:translate-x-2 inline-block"
                         >
                           {link}

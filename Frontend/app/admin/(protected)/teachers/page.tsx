@@ -645,13 +645,26 @@ export default function TeachersPage() {
     }
   };
 
+  const getFileUrl = (path: string | undefined) => {
+    if (!path) return "";
+    if (path.startsWith("http")) return path;
+    if (path.startsWith("/uploads")) {
+      // Use direct backend URL to avoid proxy issues, or fallback to relative if env not set
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      // Ensure baseUrl doesn't have trailing slash if path has leading slash
+      const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+      return `${cleanBase}${path}`;
+    }
+    return path;
+  };
+
   const handleShowPhoto = (teacher: Teacher) => {
     if (!teacher.profile_photo_url) {
       alert("No photo available for this teacher.");
       return;
     }
     setSelectedTeacherPhoto({
-      url: teacher.profile_photo_url,
+      url: getFileUrl(teacher.profile_photo_url),
       name: teacher.name,
     });
     setPhotoModalOpen(true);
@@ -662,7 +675,7 @@ export default function TeachersPage() {
       alert("No CV available for this teacher.");
       return;
     }
-    window.open(`${teacher.cv_url}`, "_blank");
+    window.open(getFileUrl(teacher.cv_url), "_blank");
   };
 
   if (isLoading) return <div className="p-10">Loading teachers...</div>;
@@ -670,7 +683,7 @@ export default function TeachersPage() {
 
   return (
     <div className="p-6 sm:p-10">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 dark:text-white">
             Teacher Management
@@ -682,7 +695,7 @@ export default function TeachersPage() {
         {user?.role === "supreme-admin" && (
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90"
+            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90 w-full sm:w-auto justify-center"
           >
             <UserPlus className="w-5 h-5 mr-2" />
             Add New Teacher
@@ -695,94 +708,96 @@ export default function TeachersPage() {
         {/* We will add functional sorting controls here later */}
       </div>
 
-      <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-        <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-          <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-            <tr>
-              <th scope="col" className="px-6 py-3">
-                Name
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Email
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Gender
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Shift
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Phone
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Students
-              </th>
-              <th scope="col" className="px-6 py-3">
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {teachers.map((teacher) => (
-              <tr
-                key={teacher.id}
-                className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
-              >
-                <td className="px-6 py-4 font-medium">{teacher.name}</td>
-                <td className="px-6 py-4">{teacher.email}</td>
-                <td className="px-6 py-4">{teacher.gender}</td>
-                <td className="px-6 py-4">{teacher.shift}</td>
-                <td className="px-6 py-4">{teacher.phone_number}</td>
-                <td className="px-6 py-4">0</td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-3">
-                    {teacher.profile_photo_url && (
-                      <button
-                        onClick={() => handleShowPhoto(teacher)}
-                        className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                        title="View Photo"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    )}
-                    {teacher.cv_url && (
-                      <button
-                        onClick={() => handleShowCV(teacher)}
-                        className="font-medium text-green-600 dark:text-green-500 hover:underline"
-                        title="Download CV"
-                      >
-                        <FileText className="w-4 h-4" />
-                      </button>
-                    )}
-                    {user?.role === "supreme-admin" && (
-                      <>
-                        <button
-                          onClick={() => openEditModal(teacher)}
-                          className="font-medium text-yellow-600 dark:text-yellow-500 hover:underline"
-                          title="Edit Teacher"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteTeacher(teacher.id)}
-                          className="font-medium text-red-600 dark:text-red-500 hover:underline"
-                          title="Delete Teacher"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
+      <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-[800px]">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <tr>
+                <th scope="col" className="px-6 py-3">
+                  Name
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Email
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Gender
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Shift
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Phone
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Students
+                </th>
+                <th scope="col" className="px-6 py-3">
+                  Action
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-        {teachers.length === 0 && (
-          <div className="text-center p-8 text-gray-500 dark:text-gray-400">
-            No teachers have been added yet.
-          </div>
-        )}
+            </thead>
+            <tbody>
+              {teachers.map((teacher) => (
+                <tr
+                  key={teacher.id}
+                  className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  <td className="px-6 py-4 font-medium">{teacher.name}</td>
+                  <td className="px-6 py-4">{teacher.email}</td>
+                  <td className="px-6 py-4">{teacher.gender}</td>
+                  <td className="px-6 py-4">{teacher.shift}</td>
+                  <td className="px-6 py-4">{teacher.phone_number}</td>
+                  <td className="px-6 py-4">0</td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      {teacher.profile_photo_url && (
+                        <button
+                          onClick={() => handleShowPhoto(teacher)}
+                          className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
+                          title="View Photo"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      )}
+                      {teacher.cv_url && (
+                        <button
+                          onClick={() => handleShowCV(teacher)}
+                          className="font-medium text-green-600 dark:text-green-500 hover:underline"
+                          title="Download CV"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                      )}
+                      {user?.role === "supreme-admin" && (
+                        <>
+                          <button
+                            onClick={() => openEditModal(teacher)}
+                            className="font-medium text-yellow-600 dark:text-yellow-500 hover:underline"
+                            title="Edit Teacher"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTeacher(teacher.id)}
+                            className="font-medium text-red-600 dark:text-red-500 hover:underline"
+                            title="Delete Teacher"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {teachers.length === 0 && (
+            <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+              No teachers have been added yet.
+            </div>
+          )}
+        </div>
       </div>
       <PhotoModal
         isOpen={photoModalOpen}

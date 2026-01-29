@@ -230,6 +230,17 @@ export default function AdminManagementPage() {
         fetchAdmins();
     }, []);
 
+    const getFileUrl = (path: string | undefined) => {
+        if (!path) return "";
+        if (path.startsWith("http")) return path;
+        if (path.startsWith("/uploads")) {
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+            const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+            return `${cleanBase}${path}`;
+        }
+        return path;
+    };
+
     const handleSaveAdmin = async (adminData: any) => {
         try {
             await apiFetch('/api/admin/create-admin/', {
@@ -278,62 +289,64 @@ export default function AdminManagementPage() {
     return (
         <Suspense>
             <div className="p-6 sm:p-10">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-bold">Admin Management</h1>
                         <p className="mt-2 text-gray-500">Add, view, and manage other admins.</p>
                     </div>
-                    <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90">
+                    <button onClick={() => setIsModalOpen(true)} className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90 w-full sm:w-auto justify-center">
                         <UserPlus className="w-5 h-5 mr-2" />
                         Add New Admin
                     </button>
                 </div>
 
-                <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-                    <table className="w-full text-sm text-left">
-                        <thead className="text-xs uppercase bg-gray-50">
-                            <tr>
-                                <th scope="col" className="px-6 py-3">Name</th>
-                                <th scope="col" className="px-6 py-3">Email</th>
-                                <th scope="col" className="px-6 py-3">Gender</th>
-                                <th scope="col" className="px-6 py-3">Role</th>
-                                <th scope="col" className="px-6 py-3">Phone</th>
-                                <th scope="col" className="px-6 py-3">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {admins.map((admin) => (
-                                <tr key={admin.id} className="border-b hover:bg-gray-50">
-                                    <td className="px-6 py-4 font-medium">{admin.name}</td>
-                                    <td className="px-6 py-4">{admin.email}</td>
-                                    <td className="px-6 py-4">{admin.gender}</td>
-                                    <td className="px-6 py-4">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                                            {admin.role}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4">{admin.phone_number}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            {admin.profile_photo_url && (
-                                                <a href={admin.profile_photo_url} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline"><Eye className="w-4 h-4" /></a>
-                                            )}
-                                            {admin.cv_url && (
-                                                <a href={admin.cv_url} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline"><FileText className="w-4 h-4" /></a>
-                                            )}
-                                            {/* Allow editing of admins, maybe restricted to Supreme Admin? Requirement said "from the creation... or patch via supreme admin" */}
-                                            <button onClick={() => openEdit(admin)} className="font-medium text-yellow-600 hover:underline"><Pencil className="w-4 h-4" /></button>
-                                            <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 hover:underline"><Trash2 className="w-4 h-4" /></button>
-                                        </div>
-                                    </td>
+                <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+                    <div className="w-full overflow-x-auto">
+                        <table className="w-full text-sm text-left min-w-[800px]">
+                            <thead className="text-xs uppercase bg-gray-50">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Name</th>
+                                    <th scope="col" className="px-6 py-3">Email</th>
+                                    <th scope="col" className="px-6 py-3">Gender</th>
+                                    <th scope="col" className="px-6 py-3">Role</th>
+                                    <th scope="col" className="px-6 py-3">Phone</th>
+                                    <th scope="col" className="px-6 py-3">Action</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody>
+                                {admins.map((admin) => (
+                                    <tr key={admin.id} className="border-b hover:bg-gray-50">
+                                        <td className="px-6 py-4 font-medium">{admin.name}</td>
+                                        <td className="px-6 py-4">{admin.email}</td>
+                                        <td className="px-6 py-4">{admin.gender}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${admin.role === 'supreme-admin' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                                                {admin.role}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">{admin.phone_number}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-2">
+                                                {admin.profile_photo_url && (
+                                                    <a href={getFileUrl(admin.profile_photo_url)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline"><Eye className="w-4 h-4" /></a>
+                                                )}
+                                                {admin.cv_url && (
+                                                    <a href={getFileUrl(admin.cv_url)} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline"><FileText className="w-4 h-4" /></a>
+                                                )}
+                                                {/* Allow editing of admins, maybe restricted to Supreme Admin? Requirement said "from the creation... or patch via supreme admin" */}
+                                                <button onClick={() => openEdit(admin)} className="font-medium text-yellow-600 hover:underline"><Pencil className="w-4 h-4" /></button>
+                                                <button onClick={() => handleDelete(admin.id)} className="font-medium text-red-600 hover:underline"><Trash2 className="w-4 h-4" /></button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-                <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
-                <EditAdminModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} admin={selectedAdmin} onUpdate={handleUpdateAdmin} />
+                    <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
+                    <EditAdminModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} admin={selectedAdmin} onUpdate={handleUpdateAdmin} />
+                </div>
             </div>
         </Suspense>
     );

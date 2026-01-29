@@ -612,7 +612,6 @@ function StudentsPage() {
     "Quran Reading (Nazra)",
     "Quran Memorization (Hifz)",
     "Quran Learning (Kayda)",
-    "Advanced Tajweed",
   ];
 
   if (isLoading) return <div className="p-10">Loading students...</div>;
@@ -621,17 +620,17 @@ function StudentsPage() {
   return (
     <Suspense>
       <div className="p-6 sm:p-10">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">{viewTitles[view]}</h1>
             <p className="text-gray-500">
               Manage students based on their status.
             </p>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90"
+              className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90 w-full sm:w-auto justify-center"
             >
               <UserPlus className="w-5 h-5 mr-2" />
               Add Student
@@ -715,69 +714,71 @@ function StudentsPage() {
           )}
         </div>
 
-        <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs uppercase bg-gray-50">
-              <tr>
-                <th className="px-6 py-3">Student Name</th>
-                <th className="px-6 py-3">Age</th>
-                <th className="px-6 py-3">Gender</th>
-                <th className="px-6 py-3">Parent Name</th>
-                <th className="px-6 py-3">Phone</th>
-                <th className="px-6 py-3">Country</th>
-                <th className="px-6 py-3">State</th>
-                <th className="px-6 py-3">Course</th>
-                <th className="px-6 py-3">Shift</th>
-                <th className="px-6 py-3">Assigned Teacher</th>
-                <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredStudents.map((student) => (
-                <tr key={student.id} className="border-b hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium whitespace-nowrap">
-                    {`${student.first_name} ${student.last_name}`}
-                    <p className="text-xs text-gray-500">{student.email}</p>
-                  </td>
-                  <td className="px-6 py-4">{student.age}</td>
-                  <td className="px-6 py-4">{student.gender}</td>
-                  <td className="px-6 py-4">{student.parent_name}</td>
-                  <td className="px-6 py-4">{student.phone_number}</td>
-                  <td className="px-6 py-4">{student.country}</td>
-                  <td className="px-6 py-4">{student.state || "N/A"}</td>
-                  <td className="px-6 py-4">{student.preferred_course}</td>
-                  <td className="px-6 py-4">{student.shift || "N/A"}</td>
-                  <td className="px-6 py-4">{student.teacher?.name || "N/A"}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${student.status === "Approved"
-                        ? "bg-green-100 text-green-800"
-                        : student.status === "Finished"
-                          ? "bg-gray-100 text-gray-800"
-                          : "bg-yellow-100 text-yellow-800"
-                        }`}
-                    >
-                      {student.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => setSelectedStudent(student)}
-                      className="font-medium text-primary hover:underline"
-                    >
-                      Manage
-                    </button>
-                  </td>
+        <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full text-sm text-left min-w-[800px]">
+              <thead className="text-xs uppercase bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3">Student Name</th>
+                  <th className="px-6 py-3">Age</th>
+                  <th className="px-6 py-3">Gender</th>
+                  <th className="px-6 py-3">Parent Name</th>
+                  <th className="px-6 py-3">Phone</th>
+                  <th className="px-6 py-3">Country</th>
+                  <th className="px-6 py-3">State</th>
+                  <th className="px-6 py-3">Course</th>
+                  <th className="px-6 py-3">Shift</th>
+                  <th className="px-6 py-3">Assigned Teacher</th>
+                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredStudents.length === 0 && (
-            <div className="text-center p-8">
-              No students match the current filters.
-            </div>
-          )}
+              </thead>
+              <tbody>
+                {filteredStudents.map((student) => (
+                  <tr key={student.id} className="border-b hover:bg-gray-50">
+                    <td className="px-6 py-4 font-medium whitespace-nowrap">
+                      {`${student.first_name} ${student.last_name}`}
+                      <p className="text-xs text-gray-500">{student.email}</p>
+                    </td>
+                    <td className="px-6 py-4">{student.age}</td>
+                    <td className="px-6 py-4">{student.gender}</td>
+                    <td className="px-6 py-4">{student.parent_name}</td>
+                    <td className="px-6 py-4">{student.phone_number}</td>
+                    <td className="px-6 py-4">{student.country}</td>
+                    <td className="px-6 py-4">{student.state || "N/A"}</td>
+                    <td className="px-6 py-4">{student.preferred_course}</td>
+                    <td className="px-6 py-4">{student.shift || "N/A"}</td>
+                    <td className="px-6 py-4">{student.teacher?.name || "N/A"}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${student.status === "Approved"
+                          ? "bg-green-100 text-green-800"
+                          : student.status === "Finished"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-yellow-100 text-yellow-800"
+                          }`}
+                      >
+                        {student.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => setSelectedStudent(student)}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        Manage
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {filteredStudents.length === 0 && (
+              <div className="text-center p-8">
+                No students match the current filters.
+              </div>
+            )}
+          </div>
         </div>
 
         <AddStudentModal
