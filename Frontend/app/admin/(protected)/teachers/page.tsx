@@ -708,7 +708,7 @@ export default function TeachersPage() {
 
       <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
         <div className="w-full overflow-x-auto">
-          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-[800px]">
+          <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400 min-w-[1000px]">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
               <tr>
                 <th scope="col" className="px-6 py-3">

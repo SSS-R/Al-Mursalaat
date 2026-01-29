@@ -301,7 +301,7 @@ export default function AdminManagementPage() {
 
                 <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
                     <div className="w-full overflow-x-auto">
-                        <table className="w-full text-sm text-left min-w-[800px]">
+                        <table className="w-full text-sm text-left min-w-[900px]">
                             <thead className="text-xs uppercase bg-gray-50">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">Name</th>

@@ -80,58 +80,60 @@ export default function TeacherDashboard() {
         Here are your assigned classes for the week.
       </p>
 
-      <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700">
-            <tr>
-              {daysOfWeek.map((day) => (
-                <th key={day} className="px-4 py-3 border-r">
-                  {day}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="align-top">
-            <tr>
-              {daysOfWeek.map((day) => (
-                <td key={day} className="border-r p-2 space-y-2">
-                  {(schedulesByDay[day] || []).map((schedule) => (
-                    <div
-                      key={schedule.id}
-                      className="bg-primary/10 p-3 rounded-md"
-                    >
-                      <p className="font-semibold text-sm">{`${schedule.student.first_name} ${schedule.student.last_name}`}</p>
-                      <p className="text-xs text-gray-600 flex items-center mt-1">
-                        <Clock className="w-3 h-3 mr-1.5" />
-                        {`${schedule.start_time.substring(
-                          0,
-                          5
-                        )} - ${schedule.end_time.substring(0, 5)}`}
-                      </p>
-                      {schedule.zoom_link && (
-                        <a
-                          href={schedule.zoom_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline flex items-center mt-1"
-                        >
-                          <Video className="w-3 h-3 mr-1.5" />
-                          Join Class
-                        </a>
+      <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-sm text-left min-w-[900px]">
+            <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700">
+              <tr>
+                {daysOfWeek.map((day) => (
+                  <th key={day} className="px-4 py-3 border-r">
+                    {day}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="align-top">
+              <tr>
+                {daysOfWeek.map((day) => (
+                  <td key={day} className="border-r p-2 space-y-2">
+                    {(schedulesByDay[day] || []).map((schedule) => (
+                      <div
+                        key={schedule.id}
+                        className="bg-primary/10 p-3 rounded-md"
+                      >
+                        <p className="font-semibold text-sm">{`${schedule.student.first_name} ${schedule.student.last_name}`}</p>
+                        <p className="text-xs text-gray-600 flex items-center mt-1">
+                          <Clock className="w-3 h-3 mr-1.5" />
+                          {`${schedule.start_time.substring(
+                            0,
+                            5
+                          )} - ${schedule.end_time.substring(0, 5)}`}
+                        </p>
+                        {schedule.zoom_link && (
+                          <a
+                            href={schedule.zoom_link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline flex items-center mt-1"
+                          >
+                            <Video className="w-3 h-3 mr-1.5" />
+                            Join Class
+                          </a>
+                        )}
+                      </div>
+                    ))}
+                    {(!schedulesByDay[day] ||
+                      schedulesByDay[day].length === 0) && (
+                        <p className="text-xs text-gray-400 italic p-3">
+                          No classes
+                        </p>
                       )}
-                    </div>
-                  ))}
-                  {(!schedulesByDay[day] ||
-                    schedulesByDay[day].length === 0) && (
-                      <p className="text-xs text-gray-400 italic p-3">
-                        No classes
-                      </p>
-                    )}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

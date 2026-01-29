@@ -716,7 +716,7 @@ function StudentsPage() {
 
         <div className="mt-8 bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden">
           <div className="w-full overflow-x-auto">
-            <table className="w-full text-sm text-left min-w-[800px]">
+            <table className="w-full text-sm text-left min-w-[1200px]">
               <thead className="text-xs uppercase bg-gray-50">
                 <tr>
                   <th className="px-6 py-3">Student Name</th>
