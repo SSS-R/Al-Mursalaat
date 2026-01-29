@@ -648,12 +648,10 @@ export default function TeachersPage() {
   const getFileUrl = (path: string | undefined) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
+    // Return relative path to let Next.js proxy handle it
+    // This fixes Mixed Content issues and localhost access on mobile
     if (path.startsWith("/uploads")) {
-      // Use direct backend URL to avoid proxy issues, or fallback to relative if env not set
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-      // Ensure baseUrl doesn't have trailing slash if path has leading slash
-      const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-      return `${cleanBase}${path}`;
+      return path;
     }
     return path;
   };

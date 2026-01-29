@@ -233,10 +233,9 @@ export default function AdminManagementPage() {
     const getFileUrl = (path: string | undefined) => {
         if (!path) return "";
         if (path.startsWith("http")) return path;
+        // Return relative path to let Next.js proxy handle it
         if (path.startsWith("/uploads")) {
-            const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-            const cleanBase = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
-            return `${cleanBase}${path}`;
+            return path;
         }
         return path;
     };

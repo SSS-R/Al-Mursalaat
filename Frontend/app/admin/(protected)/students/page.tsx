@@ -627,7 +627,7 @@ function StudentsPage() {
               Manage students based on their status.
             </p>
           </div>
-          <div className="flex items-center space-x-4 w-full sm:w-auto justify-end">
+          <div className="flex items-center space-x-4 w-full sm:w-auto mt-4 sm:mt-0">
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="flex items-center px-4 py-2 text-sm text-white bg-primary rounded-lg shadow-sm hover:bg-primary/90 w-full sm:w-auto justify-center"
