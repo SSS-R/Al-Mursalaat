@@ -85,7 +85,7 @@ export default function NormalAdminLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed w-64 bg-white dark:bg-gray-800 shadow-md flex-shrink-0 h-screen transition-transform duration-300 z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed right-0 top-0 w-64 bg-white dark:bg-gray-800 shadow-md flex-shrink-0 h-screen transition-transform duration-300 z-40 ${sidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
       >
         <div className="p-6 text-center hidden md:block">
@@ -98,8 +98,8 @@ export default function NormalAdminLayout({
               href="/n_admin/dashboard"
               onClick={closeSidebar}
               className={`flex items-center px-4 py-3 rounded-lg ${isActive("/n_admin/dashboard")
-                  ? "text-primary font-semibold"
-                  : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                ? "text-primary font-semibold"
+                : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                 }`}
             >
               <Home className="w-5 h-5" />
@@ -110,8 +110,8 @@ export default function NormalAdminLayout({
               href="/n_admin/profile"
               onClick={closeSidebar}
               className={`mt-2 flex items-center px-4 py-3 rounded-lg ${isActive("/n_admin/profile")
-                  ? "text-primary font-semibold"
-                  : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                ? "text-primary font-semibold"
+                : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                 }`}
             >
               <UserCircle className="w-5 h-5" />

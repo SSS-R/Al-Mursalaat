@@ -98,7 +98,7 @@ function AdminLayout1({
 
         {/* Sidebar */}
         <aside
-          className={`fixed w-64 bg-white dark:bg-gray-800 shadow-md flex-shrink-0 h-screen transition-transform duration-300 z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          className={`fixed right-0 top-0 w-64 bg-white dark:bg-gray-800 shadow-md flex-shrink-0 h-screen transition-transform duration-300 z-40 ${sidebarOpen ? "translate-x-0" : "translate-x-full"
             }`}
         >
           <div className="p-6 text-center hidden md:block">
@@ -111,8 +111,8 @@ function AdminLayout1({
                 href="/admin/dashboard"
                 onClick={closeSidebar}
                 className={`flex items-center px-4 py-3 rounded-lg ${isActive("/admin/dashboard")
-                    ? "text-primary font-semibold"
-                    : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                  ? "text-primary font-semibold"
+                  : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                   }`}
               >
                 <Home className="w-5 h-5" />
@@ -139,9 +139,9 @@ function AdminLayout1({
                       href="/admin/students?view=all"
                       onClick={closeSidebar}
                       className={`block px-4 py-2 mt-1 text-sm rounded-lg ${pathname === "/admin/students" &&
-                          searchParams.get("view") === "all"
-                          ? "text-primary font-semibold"
-                          : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white"
+                        searchParams.get("view") === "all"
+                        ? "text-primary font-semibold"
+                        : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white"
                         }`}
                     >
                       All Students
@@ -150,9 +150,9 @@ function AdminLayout1({
                       href="/admin/students?view=unassigned"
                       onClick={closeSidebar}
                       className={`block px-4 py-2 mt-1 text-sm rounded-lg ${pathname === "/admin/students" &&
-                          searchParams.get("view") === "unassigned"
-                          ? "text-primary font-semibold"
-                          : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white"
+                        searchParams.get("view") === "unassigned"
+                        ? "text-primary font-semibold"
+                        : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-400 dark:hover:text-white"
                         }`}
                     >
                       Unassigned Students
@@ -165,8 +165,8 @@ function AdminLayout1({
                 href="/admin/teachers"
                 onClick={closeSidebar}
                 className={`mt-2 flex items-center px-4 py-3 rounded-lg ${isActive("/admin/teachers")
-                    ? "text-primary font-semibold"
-                    : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                  ? "text-primary font-semibold"
+                  : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                   }`}
               >
                 <BookOpen className="w-5 h-5" />
@@ -178,8 +178,8 @@ function AdminLayout1({
                   href="/admin/admins"
                   onClick={closeSidebar}
                   className={`mt-2 flex items-center px-4 py-3 rounded-lg ${isActive("/admin/admins")
-                      ? "text-primary font-semibold"
-                      : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                    ? "text-primary font-semibold"
+                    : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                     }`}
                 >
                   <Shield className="w-5 h-5" />

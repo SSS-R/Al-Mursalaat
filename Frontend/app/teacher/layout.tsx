@@ -103,7 +103,7 @@ export default function TeacherLayout({
 
       {/* Sidebar */}
       <aside
-        className={`fixed w-64 bg-white dark:bg-gray-800 shadow-md flex-shrink-0 h-screen transition-transform duration-300 z-40 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed right-0 top-0 w-64 bg-white dark:bg-gray-800 shadow-md flex-shrink-0 h-screen transition-transform duration-300 z-40 ${sidebarOpen ? "translate-x-0" : "translate-x-full"
           }`}
       >
         <div className="p-6 text-center hidden md:block">
@@ -116,8 +116,8 @@ export default function TeacherLayout({
               href="/teacher/dashboard"
               onClick={closeSidebar}
               className={`flex items-center px-4 py-3 rounded-lg ${isActive("/teacher/dashboard")
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
-                  : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                 }`}
             >
               <CalendarDays className="w-5 h-5" />
@@ -127,8 +127,8 @@ export default function TeacherLayout({
               href="/teacher/students"
               onClick={closeSidebar}
               className={`mt-2 flex items-center px-4 py-3 rounded-lg ${isActive("/teacher/students")
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
-                  : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                 }`}
             >
               <Users className="w-5 h-5" />
@@ -138,8 +138,8 @@ export default function TeacherLayout({
               href="/teacher/profile"
               onClick={closeSidebar}
               className={`mt-2 flex items-center px-4 py-3 rounded-lg ${isActive("/teacher/profile")
-                  ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
-                  : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
+                ? "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white"
+                : "text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-700 dark:text-gray-300 dark:hover:text-white"
                 }`}
             >
               <UserCircle className="w-5 h-5" />
