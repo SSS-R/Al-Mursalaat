@@ -615,7 +615,7 @@ export default function HomePage() {
                 badge: "Beginner",
                 title: "Quran Learning (Kayda)",
                 desc: "Learn Arabic alphabet with proper pronunciation",
-                price: "$40",
+                price: "$50",
                 badgeColor: "bg-primary",
                 features: [
                   "Arabic alphabet and pronunciation",
@@ -628,7 +628,7 @@ export default function HomePage() {
                 badge: "Intermediate",
                 title: "Quran Reading (Nazra)",
                 desc: "Learn to read the Quran with proper pronunciation",
-                price: "$50",
+                price: "$60",
                 badgeColor: "bg-secondary",
                 features: [
                   "Reading practice",
