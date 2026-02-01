@@ -788,37 +788,39 @@ function WeeklyCalendar({
 
   return (
     <div className="border-t dark:border-gray-700 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={goToPreviousWeek}
-            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="font-semibold min-w-[200px]">
-            {weekStart.toLocaleDateString()} -{" "}
-            {new Date(
-              weekStart.getTime() + 6 * 24 * 60 * 60 * 1000
-            ).toLocaleDateString()}
-          </span>
-          <button
-            onClick={goToNextWeek}
-            className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 sm:gap-0">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={goToPreviousWeek}
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="font-semibold text-sm sm:text-base whitespace-nowrap">
+              {weekStart.toLocaleDateString()} -{" "}
+              {new Date(
+                weekStart.getTime() + 6 * 24 * 60 * 60 * 1000
+              ).toLocaleDateString()}
+            </span>
+            <button
+              onClick={goToNextWeek}
+              className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
           <input
             type="date"
             value={currentDate.toISOString().split("T")[0]}
             onChange={handleDatePickerChange}
-            className="p-1 border rounded-md text-sm"
+            className="p-1 border rounded-md text-sm ml-auto sm:ml-0"
             title="Jump to week"
           />
         </div>
         <button
           onClick={onAddSchedule}
-          className="flex items-center text-sm text-primary hover:underline"
+          className="flex items-center text-sm text-primary hover:underline self-end sm:self-auto"
         >
           <PlusCircle className="w-4 h-4 mr-1" />
           Add Schedule
@@ -830,7 +832,7 @@ function WeeklyCalendar({
           <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700">
             <tr>
               {weekDates.map((date, index) => (
-                <th key={index} className="px-4 py-2 border-r text-center">
+                <th key={index} className="px-4 py-2 border-r text-center min-w-[100px]">
                   <div>{daysOfWeek[date.getDay()]}</div>
                   <div className="text-xs font-normal text-gray-500">
                     {date.toLocaleDateString("en-US", {
@@ -848,7 +850,7 @@ function WeeklyCalendar({
                 const dateStr = date.toISOString().split("T")[0];
                 const daySchedules = schedulesByDate[dateStr] || [];
                 return (
-                  <td key={index} className="border-r p-2 space-y-2">
+                  <td key={index} className="border-r p-2 space-y-2 min-w-[100px]">
                     {daySchedules.map(({ schedule, student }) => (
                       <button
                         key={schedule.id}
@@ -1154,8 +1156,8 @@ export default function NormalAdminDashboard() {
         </p>
       </div>
 
-      <div className="mt-6 flex items-center space-x-4">
-        <div>
+      <div className="mt-6 flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+        <div className="w-full sm:w-auto">
           <label htmlFor="shiftFilter" className="block text-sm font-medium">
             Filter by Shift
           </label>
@@ -1172,7 +1174,7 @@ export default function NormalAdminDashboard() {
             <option value="Night">Night</option>
           </select>
         </div>
-        <div>
+        <div className="w-full sm:w-auto">
           <label htmlFor="sortBy" className="block text-sm font-medium">
             Sort By
           </label>
