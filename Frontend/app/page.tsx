@@ -1261,49 +1261,69 @@ export default function HomePage() {
             </p>
           </div>
           <div className="grid lg:grid-cols-3 gap-8">
-            {[
-              {
-                icon: Phone,
-                title: "WhatsApp",
-                info: ["+8801601092024"],
-                color: "text-primary",
-              },
-              {
-                icon: Mail,
-                title: "Email",
-                info: ["almursalaatonline@gmail.com"],
-                color: "text-secondary",
-              },
-              {
-                icon: Facebook,
-                title: "Facebook",
-                info: ["Al Mursalaat Online Islamic Academy"],
-                color: "text-accent",
-              },
-            ].map((contact, index) => (
-              <Card
-                key={contact.title}
-                className="text-center hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-3 animate-fade-in-up group"
-                style={{ animationDelay: `${index * 200}ms` }}
-              >
+            {/* WhatsApp Card */}
+            <a
+              href="https://wa.me/8801601092024"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card className="text-center hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-3 animate-fade-in-up group cursor-pointer h-full">
                 <CardContent className="pt-8">
-                  <contact.icon
-                    className={`h-12 w-12 ${contact.color} mx-auto mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
-                  />
+                  <Phone className="h-12 w-12 text-primary mx-auto mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
                   <h3 className="text-xl font-semibold text-primary mb-2 group-hover:text-secondary transition-colors duration-300">
-                    {contact.title}
+                    WhatsApp
                   </h3>
-                  {contact.info.map((info, i) => (
-                    <p
-                      key={i}
-                      className="text-gray-600 group-hover:text-gray-800 transition-colors duration-300"
-                    >
-                      {info}
-                    </p>
-                  ))}
+                  <p className="text-gray-600 group-hover:text-gray-800 transition-colors duration-300">
+                    +8801601092024
+                  </p>
                 </CardContent>
               </Card>
-            ))}
+            </a>
+
+            {/* Email Card */}
+            <a
+              href="mailto:almursalaatonline@gmail.com"
+              className="block"
+            >
+              <Card
+                className="text-center hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-3 animate-fade-in-up group cursor-pointer h-full"
+                style={{ animationDelay: "200ms" }}
+              >
+                <CardContent className="pt-8">
+                  <Mail className="h-12 w-12 text-secondary mx-auto mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                  <h3 className="text-xl font-semibold text-primary mb-2 group-hover:text-secondary transition-colors duration-300">
+                    Email
+                  </h3>
+                  <p className="text-gray-600 group-hover:text-gray-800 transition-colors duration-300">
+                    almursalaatonline@gmail.com
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
+
+            {/* Facebook Card */}
+            <a
+              href="https://www.facebook.com/profile.php?id=61577710734719"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Card
+                className="text-center hover:shadow-xl transition-all duration-500 transform hover:scale-105 hover:-translate-y-3 animate-fade-in-up group cursor-pointer h-full"
+                style={{ animationDelay: "400ms" }}
+              >
+                <CardContent className="pt-8">
+                  <Facebook className="h-12 w-12 text-accent mx-auto mb-4 transition-all duration-300 group-hover:scale-110 group-hover:rotate-12" />
+                  <h3 className="text-xl font-semibold text-primary mb-2 group-hover:text-secondary transition-colors duration-300">
+                    Facebook
+                  </h3>
+                  <p className="text-gray-600 group-hover:text-gray-800 transition-colors duration-300">
+                    Al Mursalaat Online Islamic Academy
+                  </p>
+                </CardContent>
+              </Card>
+            </a>
           </div>
         </div>
       </section>

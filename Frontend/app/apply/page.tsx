@@ -3,12 +3,10 @@
 import Link from 'next/link';
 import { Construction, MessageCircle, Mail, ArrowLeft } from 'lucide-react';
 
-export default function TeacherApplyComingSoon() {
-  // Contact information
-  const whatsappNumber = "+8801601092024";
-  const email = "almursalaatonline@gmail.com";
-  const facebookUrl = "https://www.facebook.com/almursalaatonline";
+// Contact information constants
+const WHATSAPP_NUMBER = "+8801601092024";
 
+export default function TeacherApplyComingSoon() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <div className="text-center max-w-2xl">
@@ -32,7 +30,7 @@ export default function TeacherApplyComingSoon() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {/* WhatsApp Button */}
             <a
-              href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`}
+              href="https://wa.me/8801601092024"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 w-full sm:w-auto justify-center"
@@ -43,7 +41,7 @@ export default function TeacherApplyComingSoon() {
 
             {/* Facebook Button */}
             <a
-              href={facebookUrl}
+              href="https://www.facebook.com/profile.php?id=61577710734719"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 w-full sm:w-auto justify-center"
@@ -56,7 +54,7 @@ export default function TeacherApplyComingSoon() {
 
             {/* Email Button */}
             <a
-              href={`mailto:${email}`}
+              href="mailto:almursalaatonline@gmail.com"
               className="flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 w-full sm:w-auto justify-center"
             >
               <Mail className="h-5 w-5" />
@@ -65,7 +63,7 @@ export default function TeacherApplyComingSoon() {
           </div>
 
           <p className="mt-4 text-sm text-gray-400">
-            Phone/WhatsApp: {whatsappNumber}
+            Phone/WhatsApp: {WHATSAPP_NUMBER}
           </p>
         </div>
 
