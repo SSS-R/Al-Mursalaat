@@ -220,6 +220,20 @@ UPLOADS_DIR = BASE_DIR / "uploads"
 async def debug_file_paths():
     """Debug endpoint to check file paths and availability."""
     import os
+    
+    def get_files_with_sizes(directory: Path):
+        """Get files with their sizes in bytes."""
+        if not directory.exists():
+            return []
+        files = []
+        for f in directory.glob("*"):
+            files.append({
+                "name": f.name,
+                "size_bytes": f.stat().st_size,
+                "size_kb": round(f.stat().st_size / 1024, 2)
+            })
+        return files
+    
     return {
         "BASE_DIR": str(BASE_DIR),
         "UPLOADS_DIR": str(UPLOADS_DIR),
@@ -229,8 +243,8 @@ async def debug_file_paths():
         "teacher_cvs_exists": (UPLOADS_DIR / "teacher_cvs").exists(),
         "admin_photos_exists": (UPLOADS_DIR / "admin_photos").exists(),
         "admin_cvs_exists": (UPLOADS_DIR / "admin_cvs").exists(),
-        "teacher_photos_files": list((UPLOADS_DIR / "teacher_photos").glob("*")) if (UPLOADS_DIR / "teacher_photos").exists() else [],
-        "teacher_cvs_files": list((UPLOADS_DIR / "teacher_cvs").glob("*")) if (UPLOADS_DIR / "teacher_cvs").exists() else [],
+        "teacher_photos_files": get_files_with_sizes(UPLOADS_DIR / "teacher_photos"),
+        "teacher_cvs_files": get_files_with_sizes(UPLOADS_DIR / "teacher_cvs"),
     }
 
 @app.get("/api/files/teacher-photo/{filename}")
