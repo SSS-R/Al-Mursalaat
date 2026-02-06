@@ -46,15 +46,24 @@ export function MobileMenu() {
                                 <span className="w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-4"></span>
                             </Link>
                         ))}
-                        <Link
-                            href="#admission"
-                            onClick={() => setOpen(false)}
-                            className="mt-6 pt-6 border-t border-gray-100"
-                        >
-                            <Button className="w-full bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 py-6 text-lg">
-                                Apply Now
-                            </Button>
-                        </Link>
+                        <div className="mt-6 pt-6 border-t border-gray-100 flex flex-col gap-3">
+                            <Link
+                                href="/apply"
+                                onClick={() => setOpen(false)}
+                            >
+                                <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 py-6 text-lg">
+                                    Teacher Apply
+                                </Button>
+                            </Link>
+                            <Link
+                                href="#admission"
+                                onClick={() => setOpen(false)}
+                            >
+                                <Button className="w-full bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300 py-6 text-lg">
+                                    Apply Now
+                                </Button>
+                            </Link>
+                        </div>
                     </nav>
                 </SheetContent>
             </Sheet>
