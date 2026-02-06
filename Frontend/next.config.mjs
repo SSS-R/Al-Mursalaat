@@ -1,4 +1,8 @@
 /** @type {import('next').NextConfig} */
+
+// Backend URL - use environment variable in production, fallback to localhost for development
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://127.0.0.1:8000';
+
 const nextConfig = {
 
   eslint: {
@@ -14,19 +18,19 @@ const nextConfig = {
     return [
       {
         source: '/docs',
-        destination: 'http://127.0.0.1:8000/docs',
+        destination: `${BACKEND_URL}/docs`,
       },
       {
         source: '/openapi.json',
-        destination: 'http://127.0.0.1:8000/openapi.json',
+        destination: `${BACKEND_URL}/openapi.json`,
       },
       {
         source: '/submit-application',
-        destination: 'http://127.0.0.1:8000/submit-application/',
+        destination: `${BACKEND_URL}/submit-application/`,
       },
       {
         source: '/uploads/:path*',
-        destination: 'http://127.0.0.1:8000/uploads/:path*',
+        destination: `${BACKEND_URL}/uploads/:path*`,
       },
     ]
   },

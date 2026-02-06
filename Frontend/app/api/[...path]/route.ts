@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+// Use environment variable for backend URL, fallback to localhost for development
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
 
 async function proxyRequest(request: NextRequest) {
   const url = new URL(request.url);
@@ -11,15 +12,15 @@ async function proxyRequest(request: NextRequest) {
 
   // Forward the request with cookies
   const headers = new Headers();
-  
+
   // Forward relevant headers
   const cookieHeader = request.headers.get("cookie");
   if (cookieHeader) {
     headers.set("cookie", cookieHeader);
   }
-  
+
   headers.set("content-type", request.headers.get("content-type") || "application/json");
-  
+
   // Forward authorization header if present
   const authHeader = request.headers.get("authorization");
   if (authHeader) {
@@ -38,10 +39,10 @@ async function proxyRequest(request: NextRequest) {
 
   try {
     const response = await fetch(backendUrl, fetchOptions);
-    
+
     // Create response with backend data
     const data = await response.text();
-    
+
     return new NextResponse(data, {
       status: response.status,
       statusText: response.statusText,
