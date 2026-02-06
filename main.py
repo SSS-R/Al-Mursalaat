@@ -213,14 +213,32 @@ def read_root():
 # --- File Serving API Endpoints ---
 # These endpoints serve uploaded files (photos/CVs) with proper content-type headers
 
-UPLOADS_DIR = Path("uploads")
+# Use absolute path based on main.py location to avoid working directory issues
+UPLOADS_DIR = BASE_DIR / "uploads"
+
+@app.get("/api/files/debug")
+async def debug_file_paths():
+    """Debug endpoint to check file paths and availability."""
+    import os
+    return {
+        "BASE_DIR": str(BASE_DIR),
+        "UPLOADS_DIR": str(UPLOADS_DIR),
+        "UPLOADS_EXISTS": UPLOADS_DIR.exists(),
+        "WORKING_DIR": os.getcwd(),
+        "teacher_photos_exists": (UPLOADS_DIR / "teacher_photos").exists(),
+        "teacher_cvs_exists": (UPLOADS_DIR / "teacher_cvs").exists(),
+        "admin_photos_exists": (UPLOADS_DIR / "admin_photos").exists(),
+        "admin_cvs_exists": (UPLOADS_DIR / "admin_cvs").exists(),
+        "teacher_photos_files": list((UPLOADS_DIR / "teacher_photos").glob("*")) if (UPLOADS_DIR / "teacher_photos").exists() else [],
+        "teacher_cvs_files": list((UPLOADS_DIR / "teacher_cvs").glob("*")) if (UPLOADS_DIR / "teacher_cvs").exists() else [],
+    }
 
 @app.get("/api/files/teacher-photo/{filename}")
 async def get_teacher_photo(filename: str):
     """Serve a teacher's photo file."""
     file_path = UPLOADS_DIR / "teacher_photos" / filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Photo not found")
+        raise HTTPException(status_code=404, detail=f"Photo not found at {file_path}")
     
     # Determine content type based on extension
     ext = file_path.suffix.lower()
@@ -240,7 +258,7 @@ async def get_teacher_cv(filename: str):
     """Serve a teacher's CV file."""
     file_path = UPLOADS_DIR / "teacher_cvs" / filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="CV not found")
+        raise HTTPException(status_code=404, detail=f"CV not found at {file_path}")
     
     return FileResponse(file_path, media_type="application/pdf")
 
@@ -249,7 +267,7 @@ async def get_admin_photo(filename: str):
     """Serve an admin's photo file."""
     file_path = UPLOADS_DIR / "admin_photos" / filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Photo not found")
+        raise HTTPException(status_code=404, detail=f"Photo not found at {file_path}")
     
     ext = file_path.suffix.lower()
     content_types = {
@@ -268,7 +286,7 @@ async def get_admin_cv(filename: str):
     """Serve an admin's CV file."""
     file_path = UPLOADS_DIR / "admin_cvs" / filename
     if not file_path.exists():
-        raise HTTPException(status_code=404, detail="CV not found")
+        raise HTTPException(status_code=404, detail=f"CV not found at {file_path}")
     
     return FileResponse(file_path, media_type="application/pdf")
 
