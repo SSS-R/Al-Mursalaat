@@ -422,7 +422,12 @@ export default function HomePage() {
                 )
               )}
             </nav>
-            <div className="hidden lg:block">
+            <div className="hidden lg:flex items-center gap-3">
+              <Link href="/apply">
+                <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-white transform transition-all duration-300 hover:scale-105">
+                  Teacher Apply
+                </Button>
+              </Link>
               <Link href="#admission">
                 <Button className="bg-primary hover:bg-primary/90 transform transition-all duration-300 hover:scale-105 hover:shadow-lg animate-bounce-subtle">
                   Apply Now
@@ -465,7 +470,7 @@ export default function HomePage() {
                   guidance and personalized learning.
                 </p>
                 <div
-                  className="flex flex-col sm:flex-row gap-4 animate-fade-in-up"
+                  className="flex flex-col sm:flex-row gap-4 animate-fade-in-up flex-wrap"
                   style={{ animationDelay: "400ms" }}
                 >
                   <Link href="#admission">

@@ -214,6 +214,10 @@ export default function AdminManagementPage() {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
 
+    // Photo modal state
+    const [photoModalOpen, setPhotoModalOpen] = useState(false);
+    const [photoModalData, setPhotoModalData] = useState<{ url: string; name: string } | null>(null);
+
     const fetchAdmins = async () => {
         setIsLoading(true);
         try {
@@ -301,6 +305,18 @@ export default function AdminManagementPage() {
         setEditModalOpen(true);
     };
 
+    const handleShowPhoto = (admin: AdminUser) => {
+        if (!admin.profile_photo_url) {
+            alert("No photo available for this admin.");
+            return;
+        }
+        setPhotoModalData({
+            url: getFileUrl(admin.profile_photo_url),
+            name: admin.name
+        });
+        setPhotoModalOpen(true);
+    };
+
     return (
         <Suspense>
             <div className="p-6 sm:p-10">
@@ -343,7 +359,7 @@ export default function AdminManagementPage() {
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
                                                 {admin.profile_photo_url && (
-                                                    <a href={getFileUrl(admin.profile_photo_url)} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline"><Eye className="w-4 h-4" /></a>
+                                                    <button onClick={() => handleShowPhoto(admin)} className="text-blue-500 hover:text-blue-700" title="View Photo"><Eye className="w-4 h-4" /></button>
                                                 )}
                                                 {admin.cv_url && (
                                                     <a href={getFileUrl(admin.cv_url)} target="_blank" rel="noopener noreferrer" className="text-green-500 hover:underline"><FileText className="w-4 h-4" /></a>
@@ -361,6 +377,21 @@ export default function AdminManagementPage() {
 
                     <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
                     <EditAdminModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} admin={selectedAdmin} onUpdate={handleUpdateAdmin} />
+
+                    {/* Photo Modal */}
+                    {photoModalOpen && photoModalData && (
+                        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setPhotoModalOpen(false)}>
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                                    <h3 className="text-lg font-semibold">{photoModalData.name}'s Photo</h3>
+                                    <button onClick={() => setPhotoModalOpen(false)} className="text-gray-500 hover:text-gray-700"><X size={20} /></button>
+                                </div>
+                                <div className="p-4 flex items-center justify-center min-h-[300px]">
+                                    <img src={photoModalData.url} alt={`${photoModalData.name}'s photo`} className="max-w-full max-h-[70vh] object-contain rounded" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </Suspense>
