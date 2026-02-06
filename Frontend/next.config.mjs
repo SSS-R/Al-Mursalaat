@@ -32,6 +32,11 @@ const nextConfig = {
         source: '/uploads/:path*',
         destination: `${BACKEND_URL}/uploads/:path*`,
       },
+      // Proxy file serving API endpoints directly to FastAPI (bypasses API routes)
+      {
+        source: '/api/files/:path*',
+        destination: `${BACKEND_URL}/api/files/:path*`,
+      },
     ]
   },
 };
