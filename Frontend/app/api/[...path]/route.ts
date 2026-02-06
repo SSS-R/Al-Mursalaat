@@ -34,7 +34,17 @@ async function proxyRequest(request: NextRequest) {
 
   // Forward body for non-GET requests
   if (request.method !== "GET" && request.method !== "HEAD") {
-    fetchOptions.body = await request.text();
+    const contentType = request.headers.get("content-type") || "";
+
+    // For multipart/form-data (file uploads), we need to preserve binary data
+    // Using arrayBuffer() prevents text encoding corruption
+    if (contentType.includes("multipart/form-data")) {
+      // Pass the raw bytes to preserve file integrity
+      fetchOptions.body = await request.arrayBuffer();
+    } else {
+      // For JSON and other text content, text() is fine
+      fetchOptions.body = await request.text();
+    }
   }
 
   try {
