@@ -40,14 +40,34 @@ async function proxyRequest(request: NextRequest) {
   try {
     const response = await fetch(backendUrl, fetchOptions);
 
-    // Create response with backend data
+    const contentType = response.headers.get("content-type") || "application/json";
+
+    // Handle binary responses (images, PDFs, etc.) differently from text/JSON
+    const isBinaryContent =
+      contentType.startsWith("image/") ||
+      contentType === "application/pdf" ||
+      contentType === "application/octet-stream";
+
+    if (isBinaryContent) {
+      // Use arrayBuffer for binary content to avoid corruption
+      const buffer = await response.arrayBuffer();
+      return new NextResponse(buffer, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: {
+          "content-type": contentType,
+        },
+      });
+    }
+
+    // For text/JSON responses, use text()
     const data = await response.text();
 
     return new NextResponse(data, {
       status: response.status,
       statusText: response.statusText,
       headers: {
-        "content-type": response.headers.get("content-type") || "application/json",
+        "content-type": contentType,
       },
     });
   } catch (error) {

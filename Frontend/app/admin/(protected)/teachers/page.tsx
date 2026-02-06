@@ -17,6 +17,7 @@ interface Teacher {
   gender: string;
   profile_photo_url?: string;
   cv_url?: string;
+  students?: any[]; // Students assigned to this teacher
 }
 type User = {
   email: string;
@@ -760,7 +761,7 @@ export default function TeachersPage() {
                   <td className="px-6 py-4">{teacher.gender}</td>
                   <td className="px-6 py-4">{teacher.shift}</td>
                   <td className="px-6 py-4">{teacher.phone_number}</td>
-                  <td className="px-6 py-4">0</td>
+                  <td className="px-6 py-4">{teacher.students?.length || 0}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       {teacher.profile_photo_url && (
