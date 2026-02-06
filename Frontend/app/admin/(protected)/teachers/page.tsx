@@ -648,11 +648,26 @@ export default function TeachersPage() {
   const getFileUrl = (path: string | undefined) => {
     if (!path) return "";
     if (path.startsWith("http")) return path;
-    // Return relative path to let Next.js proxy handle it
-    // This fixes Mixed Content issues and localhost access on mobile
-    if (path.startsWith("/uploads")) {
-      return path;
+
+    // Convert static file paths to API endpoints for reliable file serving
+    // e.g., /uploads/teacher_photos/uuid.jpg -> /api/files/teacher-photo/uuid.jpg
+    if (path.startsWith("/uploads/teacher_photos/")) {
+      const filename = path.replace("/uploads/teacher_photos/", "");
+      return `/api/files/teacher-photo/${filename}`;
     }
+    if (path.startsWith("/uploads/teacher_cvs/")) {
+      const filename = path.replace("/uploads/teacher_cvs/", "");
+      return `/api/files/teacher-cv/${filename}`;
+    }
+    if (path.startsWith("/uploads/admin_photos/")) {
+      const filename = path.replace("/uploads/admin_photos/", "");
+      return `/api/files/admin-photo/${filename}`;
+    }
+    if (path.startsWith("/uploads/admin_cvs/")) {
+      const filename = path.replace("/uploads/admin_cvs/", "");
+      return `/api/files/admin-cv/${filename}`;
+    }
+
     return path;
   };
 

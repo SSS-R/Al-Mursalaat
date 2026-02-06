@@ -1,6 +1,7 @@
 # main.py
 from datetime import datetime, date, timedelta
 from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request, UploadFile, File, Form
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from sqlalchemy.orm import Session
@@ -208,6 +209,69 @@ async def get_current_admin(request: Request, db: Session = Depends(get_db)):
 @app.get("/")
 def read_root():
     return {"status": "ok", "message": "Welcome to the Al-Mursalaat API!"}
+
+# --- File Serving API Endpoints ---
+# These endpoints serve uploaded files (photos/CVs) with proper content-type headers
+
+UPLOADS_DIR = Path("uploads")
+
+@app.get("/api/files/teacher-photo/{filename}")
+async def get_teacher_photo(filename: str):
+    """Serve a teacher's photo file."""
+    file_path = UPLOADS_DIR / "teacher_photos" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Photo not found")
+    
+    # Determine content type based on extension
+    ext = file_path.suffix.lower()
+    content_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp"
+    }
+    media_type = content_types.get(ext, "application/octet-stream")
+    
+    return FileResponse(file_path, media_type=media_type)
+
+@app.get("/api/files/teacher-cv/{filename}")
+async def get_teacher_cv(filename: str):
+    """Serve a teacher's CV file."""
+    file_path = UPLOADS_DIR / "teacher_cvs" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="CV not found")
+    
+    return FileResponse(file_path, media_type="application/pdf")
+
+@app.get("/api/files/admin-photo/{filename}")
+async def get_admin_photo(filename: str):
+    """Serve an admin's photo file."""
+    file_path = UPLOADS_DIR / "admin_photos" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Photo not found")
+    
+    ext = file_path.suffix.lower()
+    content_types = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".gif": "image/gif",
+        ".webp": "image/webp"
+    }
+    media_type = content_types.get(ext, "application/octet-stream")
+    
+    return FileResponse(file_path, media_type=media_type)
+
+@app.get("/api/files/admin-cv/{filename}")
+async def get_admin_cv(filename: str):
+    """Serve an admin's CV file."""
+    file_path = UPLOADS_DIR / "admin_cvs" / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="CV not found")
+    
+    return FileResponse(file_path, media_type="application/pdf")
+
 
 @app.post("/submit-application/", response_model=schemas.Application, dependencies=[Depends(RateLimiter(times=3, minutes=2))])
 def submit_application(application: schemas.ApplicationCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
