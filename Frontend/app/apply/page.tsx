@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Construction, MessageCircle, Mail, ArrowLeft } from 'lucide-react';
 
 // Contact information constants
-const WHATSAPP_NUMBER = "+8801601092024";
+const WHATSAPP_NUMBER = "+8801805207677";
 
 export default function TeacherApplyComingSoon() {
   return (
