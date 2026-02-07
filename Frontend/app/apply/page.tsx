@@ -30,7 +30,7 @@ export default function TeacherApplyComingSoon() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             {/* WhatsApp Button */}
             <a
-              href="https://wa.me/8801601092024"
+              href="https://wa.me/8801805207677"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:scale-105 w-full sm:w-auto justify-center"

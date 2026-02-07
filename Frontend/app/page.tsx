@@ -1263,7 +1263,7 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* WhatsApp Card */}
             <a
-              href="https://wa.me/8801601092024"
+              href="https://wa.me/8801805207677"
               target="_blank"
               rel="noopener noreferrer"
               className="block"
@@ -1275,7 +1275,7 @@ export default function HomePage() {
                     WhatsApp
                   </h3>
                   <p className="text-gray-600 group-hover:text-gray-800 transition-colors duration-300">
-                    +8801601092024
+                    +8801805207677
                   </p>
                 </CardContent>
               </Card>
