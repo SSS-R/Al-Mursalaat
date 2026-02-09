@@ -128,17 +128,20 @@ function AddScheduleModal({
     endDate.setHours(hours + 1, minutes, 0);
     const endTime = endDate.toTimeString().substring(0, 5);
 
-    // Create a schedule with comma-separated days
-    const scheduleData = {
-      student_id: parseInt(studentId),
-      teacher_id: teacher.id,
-      day_of_week: selectedDays.join(","),
-      start_time: startTime,
-      end_time: endTime,
-      zoom_link: zoomLink || null,
-    };
     try {
-      await onSave(scheduleData);
+      // Create a SEPARATE schedule record for EACH day
+      // This allows individual day editing/deletion
+      for (const day of selectedDays) {
+        const scheduleData = {
+          student_id: parseInt(studentId),
+          teacher_id: teacher.id,
+          day_of_week: day, // Single day, not comma-separated
+          start_time: startTime,
+          end_time: endTime,
+          zoom_link: zoomLink || null,
+        };
+        await onSave(scheduleData);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

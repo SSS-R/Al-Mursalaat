@@ -981,6 +981,41 @@ def delete_schedule(schedule_id: int, db: Session=Depends(get_db), current_admin
     
     return {"message": "Schedule deleted successfully."}
 
+@app.post("/api/admin/migrate-schedules")
+def migrate_schedules_to_per_day(db: Session=Depends(get_db), current_admin=Depends(get_current_admin)):
+    """
+    Migration endpoint: Splits schedules with comma-separated days into separate per-day records.
+    This enables individual day editing/deletion.
+    """
+    if current_admin.role not in ["admin", "supreme-admin"]: 
+        raise HTTPException(status_code=403, detail="Forbidden")
+    
+    # Find all schedules with comma in day_of_week (multi-day records)
+    multi_day_schedules = db.query(models.Schedule).filter(models.Schedule.day_of_week.like("%,%")).all()
+    
+    migrated_count = 0
+    for schedule in multi_day_schedules:
+        days = [d.strip() for d in schedule.day_of_week.split(",")]
+        
+        # Create individual records for each day (skip the first one, we'll update the original)
+        for day in days[1:]:
+            new_schedule = models.Schedule(
+                day_of_week=day,
+                start_time=schedule.start_time,
+                end_time=schedule.end_time,
+                zoom_link=schedule.zoom_link,
+                student_id=schedule.student_id,
+                teacher_id=schedule.teacher_id
+            )
+            db.add(new_schedule)
+        
+        # Update the original record to only have the first day
+        schedule.day_of_week = days[0]
+        migrated_count += 1
+    
+    db.commit()
+    return {"message": f"Successfully migrated {migrated_count} schedules into separate per-day records."}
+
 @app.get("/api/teacher/my-attendance-stats", response_model=schemas.AttendanceStats)
 def get_my_stats(
     year: int, month: int, 
