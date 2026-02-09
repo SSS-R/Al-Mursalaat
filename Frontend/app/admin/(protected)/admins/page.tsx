@@ -105,15 +105,30 @@ function AddAdminModal({ isOpen, onClose, onSave }: { isOpen: boolean; onClose: 
 }
 
 // --- Edit Admin Modal ---
-function EditAdminModal({ isOpen, onClose, admin, onUpdate }: { isOpen: boolean; onClose: () => void; admin: AdminUser | null; onUpdate: (id: number, data: any) => Promise<void>; }) {
+function EditAdminModal({
+    isOpen,
+    onClose,
+    admin,
+    onUpdate,
+    onDeletePhoto,
+    onDeleteCV
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    admin: AdminUser | null;
+    onUpdate: (id: number, data: any) => Promise<void>;
+    onDeletePhoto: (id: number) => Promise<void>;
+    onDeleteCV: (id: number) => Promise<void>;
+}) {
     const [name, setName] = useState('');
-    const [email, setEmail] = useState(''); // Email usually not editable for admins/users without more logic? Let's allow it.
+    const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [gender, setGender] = useState('');
     const [whatsapp, setWhatsapp] = useState('');
     const [photo, setPhoto] = useState<File | null>(null);
     const [cv, setCV] = useState<File | null>(null);
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [existingCvUrl, setExistingCvUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -123,8 +138,9 @@ function EditAdminModal({ isOpen, onClose, admin, onUpdate }: { isOpen: boolean;
             setEmail(admin.email);
             setPhone(admin.phone_number);
             setGender(admin.gender);
-            setWhatsapp(admin.phone_number); // Defaulting
+            setWhatsapp(admin.phone_number);
             setPhotoPreview(admin.profile_photo_url || null);
+            setExistingCvUrl(admin.cv_url || null);
             setPhoto(null);
             setCV(null);
             setError(null);
@@ -138,6 +154,32 @@ function EditAdminModal({ isOpen, onClose, admin, onUpdate }: { isOpen: boolean;
             const reader = new FileReader();
             reader.onloadend = () => setPhotoPreview(reader.result as string);
             reader.readAsDataURL(file);
+        }
+    };
+
+    const handleDeletePhoto = async () => {
+        if (!admin) return;
+        if (!window.confirm("Are you sure you want to delete this photo?")) return;
+
+        try {
+            await onDeletePhoto(admin.id);
+            setPhotoPreview(null);
+            setPhoto(null);
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    const handleDeleteCV = async () => {
+        if (!admin) return;
+        if (!window.confirm("Are you sure you want to delete this CV?")) return;
+
+        try {
+            await onDeleteCV(admin.id);
+            setExistingCvUrl(null);
+            setCV(null);
+        } catch (err: any) {
+            setError(err.message);
         }
     };
 
@@ -167,6 +209,13 @@ function EditAdminModal({ isOpen, onClose, admin, onUpdate }: { isOpen: boolean;
         }
     };
 
+    // Extract filename from URL for display
+    const getCvFilename = (url: string | null) => {
+        if (!url) return null;
+        const parts = url.split('/');
+        return parts[parts.length - 1] || 'CV.pdf';
+    };
+
     if (!isOpen || !admin) return null;
 
     return (
@@ -187,12 +236,41 @@ function EditAdminModal({ isOpen, onClose, admin, onUpdate }: { isOpen: boolean;
 
                         <div>
                             <label className="block text-sm font-medium">Update Photo (Max 5MB)</label>
-                            {photoPreview && <img src={photoPreview} alt="Preview" className="w-16 h-16 object-cover rounded mb-2" />}
+                            {photoPreview && (
+                                <div className="mt-2 mb-2 relative inline-block">
+                                    <img src={photoPreview} alt="Preview" className="w-16 h-16 object-cover rounded" />
+                                    <button
+                                        type="button"
+                                        onClick={handleDeletePhoto}
+                                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                                        title="Delete Photo"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
                             <input type="file" accept="image/*" onChange={handlePhotoChange} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium">Update CV (Max 10MB)</label>
+                            {existingCvUrl && !cv && (
+                                <div className="mt-2 mb-2 flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
+                                    <FileText className="w-4 h-4 text-green-600" />
+                                    <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                                        {getCvFilename(existingCvUrl)}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleDeleteCV}
+                                        className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                                        title="Delete CV"
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </div>
+                            )}
                             <input type="file" accept=".pdf" onChange={e => setCV(e.target.files?.[0] || null)} className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
+                            {cv && <p className="mt-1 text-sm text-green-600">New CV selected: {cv.name}</p>}
                         </div>
                     </div>
                     <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700">
@@ -278,6 +356,28 @@ export default function AdminManagementPage() {
             await apiFetch(`/api/admin/users/${id}`, {
                 method: 'PATCH',
                 body: data,
+            });
+            fetchAdmins();
+        } catch (err: any) {
+            throw err;
+        }
+    };
+
+    const handleDeleteAdminPhoto = async (userId: number) => {
+        try {
+            await apiFetch(`/api/admin/users/${userId}/photo`, {
+                method: 'DELETE',
+            });
+            fetchAdmins();
+        } catch (err: any) {
+            throw err;
+        }
+    };
+
+    const handleDeleteAdminCV = async (userId: number) => {
+        try {
+            await apiFetch(`/api/admin/users/${userId}/cv`, {
+                method: 'DELETE',
             });
             fetchAdmins();
         } catch (err: any) {
@@ -376,7 +476,7 @@ export default function AdminManagementPage() {
                     </div>
 
                     <AddAdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSaveAdmin} />
-                    <EditAdminModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} admin={selectedAdmin} onUpdate={handleUpdateAdmin} />
+                    <EditAdminModal isOpen={editModalOpen} onClose={() => setEditModalOpen(false)} admin={selectedAdmin} onUpdate={handleUpdateAdmin} onDeletePhoto={handleDeleteAdminPhoto} onDeleteCV={handleDeleteAdminCV} />
 
                     {/* Photo Modal */}
                     {photoModalOpen && photoModalData && (

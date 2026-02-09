@@ -472,6 +472,72 @@ def delete_admin_user(user_id: int, db: Session = Depends(get_db), current_admin
     crud.delete_user(db=db, user_id=user_id)
     return user_to_delete
 
+# --- Photo/CV Delete Endpoints ---
+
+@app.delete("/api/admin/users/{user_id}/photo")
+def delete_admin_photo(user_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+    """Deletes an admin's profile photo."""
+    if current_admin.role != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_user = crud.get_user(db, user_id=user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    if db_user.profile_photo_url:
+        file_handler.delete_teacher_photo(db_user.profile_photo_url)  # Uses generic delete
+        crud.update_user(db=db, user_id=user_id, user_update_data={'profile_photo_url': None})
+    
+    return {"message": "Photo deleted successfully."}
+
+@app.delete("/api/admin/users/{user_id}/cv")
+def delete_admin_cv(user_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+    """Deletes an admin's CV."""
+    if current_admin.role != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_user = crud.get_user(db, user_id=user_id)
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    
+    if db_user.cv_url:
+        file_handler.delete_teacher_cv(db_user.cv_url)  # Uses generic delete
+        crud.update_user(db=db, user_id=user_id, user_update_data={'cv_url': None})
+    
+    return {"message": "CV deleted successfully."}
+
+@app.delete("/api/admin/teachers/{teacher_id}/photo")
+def delete_teacher_photo(teacher_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+    """Deletes a teacher's profile photo."""
+    if current_admin.role != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
+    if not db_teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found.")
+    
+    if db_teacher.profile_photo_url:
+        file_handler.delete_teacher_photo(db_teacher.profile_photo_url)
+        crud.update_teacher(db=db, teacher_id=teacher_id, teacher_update_data={'profile_photo_url': None})
+    
+    return {"message": "Photo deleted successfully."}
+
+@app.delete("/api/admin/teachers/{teacher_id}/cv")
+def delete_teacher_cv(teacher_id: int, db: Session = Depends(get_db), current_admin: dict = Depends(get_current_admin)):
+    """Deletes a teacher's CV."""
+    if current_admin.role != "supreme-admin":
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_teacher = crud.get_teacher(db, teacher_id=teacher_id)
+    if not db_teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found.")
+    
+    if db_teacher.cv_url:
+        file_handler.delete_teacher_cv(db_teacher.cv_url)
+        crud.update_teacher(db=db, teacher_id=teacher_id, teacher_update_data={'cv_url': None})
+    
+    return {"message": "CV deleted successfully."}
+
 @app.post("/api/forgot-pass")
 async def forgot_password(
     request_data: schemas.ForgetPasswordRequest,

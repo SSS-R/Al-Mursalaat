@@ -356,11 +356,15 @@ function EditTeacherModal({
   onClose,
   teacher,
   onUpdate,
+  onDeletePhoto,
+  onDeleteCV,
 }: {
   isOpen: boolean;
   onClose: () => void;
   teacher: Teacher | null;
   onUpdate: (teacherId: number, data: any) => Promise<void>;
+  onDeletePhoto: (teacherId: number) => Promise<void>;
+  onDeleteCV: (teacherId: number) => Promise<void>;
 }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -372,6 +376,9 @@ function EditTeacherModal({
   const [photo, setPhoto] = useState<File | null>(null);
   const [cv, setCV] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [existingCvUrl, setExistingCvUrl] = useState<string | null>(null);
+  const [photoPendingDelete, setPhotoPendingDelete] = useState(false);
+  const [cvPendingDelete, setCvPendingDelete] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -381,13 +388,15 @@ function EditTeacherModal({
       setName(teacher.name);
       setEmail(teacher.email);
       setPhone(teacher.phone_number);
-      // Assuming whatsapp might be same as phone if not in teacher object explicitly or handled differently
       setWhatsapp(teacher.phone_number);
       setGender(teacher.gender);
       setShift(teacher.shift);
       setPhotoPreview(teacher.profile_photo_url || null);
+      setExistingCvUrl(teacher.cv_url || null);
       setPhoto(null);
       setCV(null);
+      setPhotoPendingDelete(false);
+      setCvPendingDelete(false);
       setError(null);
     }
   }, [teacher, isOpen]);
@@ -406,6 +415,7 @@ function EditTeacherModal({
     }
 
     setPhoto(file);
+    setPhotoPendingDelete(false);
     setError(null);
 
     const reader = new FileReader();
@@ -426,7 +436,34 @@ function EditTeacherModal({
       return;
     }
     setCV(file);
+    setCvPendingDelete(false);
     setError(null);
+  };
+
+  const handleDeletePhoto = async () => {
+    if (!teacher) return;
+    if (!window.confirm("Are you sure you want to delete this photo?")) return;
+
+    try {
+      await onDeletePhoto(teacher.id);
+      setPhotoPreview(null);
+      setPhoto(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleDeleteCV = async () => {
+    if (!teacher) return;
+    if (!window.confirm("Are you sure you want to delete this CV?")) return;
+
+    try {
+      await onDeleteCV(teacher.id);
+      setExistingCvUrl(null);
+      setCV(null);
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -455,6 +492,13 @@ function EditTeacherModal({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Extract filename from URL for display
+  const getCvFilename = (url: string | null) => {
+    if (!url) return null;
+    const parts = url.split('/');
+    return parts[parts.length - 1] || 'CV.pdf';
   };
 
   if (!isOpen || !teacher) return null;
@@ -525,8 +569,16 @@ function EditTeacherModal({
             <div>
               <label className="block text-sm font-medium">Update Photo (Max 5MB)</label>
               {photoPreview && (
-                <div className="mt-2 mb-2">
+                <div className="mt-2 mb-2 relative inline-block">
                   <img src={photoPreview} alt="Preview" className="w-24 h-24 object-cover rounded-md border" />
+                  <button
+                    type="button"
+                    onClick={handleDeletePhoto}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    title="Delete Photo"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               )}
               <input type="file" accept="image/*" onChange={handlePhotoChange}
@@ -536,6 +588,22 @@ function EditTeacherModal({
             {/* CV */}
             <div>
               <label className="block text-sm font-medium">Update CV (Max 10MB)</label>
+              {existingCvUrl && !cv && (
+                <div className="mt-2 mb-2 flex items-center gap-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
+                  <FileText className="w-4 h-4 text-green-600" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">
+                    {getCvFilename(existingCvUrl)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDeleteCV}
+                    className="p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                    title="Delete CV"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
               <input type="file" accept=".pdf" onChange={handleCVChange}
                 className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" />
               {cv && <p className="mt-1 text-sm text-green-600">New CV selected: {cv.name}</p>}
@@ -617,6 +685,28 @@ export default function TeachersPage() {
       await apiFetch(`/api/admin/teachers/${teacherId}`, {
         method: "PATCH",
         body: teacherData,
+      });
+      await fetchTeachers(); // Refresh list
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const handleDeleteTeacherPhoto = async (teacherId: number) => {
+    try {
+      await apiFetch(`/api/admin/teachers/${teacherId}/photo`, {
+        method: "DELETE",
+      });
+      await fetchTeachers(); // Refresh list
+    } catch (err: any) {
+      throw err;
+    }
+  };
+
+  const handleDeleteTeacherCV = async (teacherId: number) => {
+    try {
+      await apiFetch(`/api/admin/teachers/${teacherId}/cv`, {
+        method: "DELETE",
       });
       await fetchTeachers(); // Refresh list
     } catch (err: any) {
@@ -829,6 +919,8 @@ export default function TeachersPage() {
         onClose={() => setEditModalOpen(false)}
         teacher={selectedTeacher}
         onUpdate={handleUpdateTeacher}
+        onDeletePhoto={handleDeleteTeacherPhoto}
+        onDeleteCV={handleDeleteTeacherCV}
       />
     </div>
   );
