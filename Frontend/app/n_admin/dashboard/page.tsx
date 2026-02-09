@@ -9,7 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  Pencil,
+  Clock,
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -262,6 +262,131 @@ function AddScheduleModal({
               className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
             >
               {isLoading ? "Saving..." : "Save Schedule"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// --- Time Edit Modal Component (for quick time adjustments on individual days) ---
+function TimeEditModal({
+  isOpen,
+  onClose,
+  onSave,
+  schedule,
+  studentName,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (scheduleId: number, startTime: string, endTime: string) => Promise<void>;
+  schedule: Schedule | null;
+  studentName: string;
+}) {
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (schedule) {
+      // Extract time from the schedule (format: "HH:MM:SS" -> "HH:MM")
+      setStartTime(schedule.start_time.substring(0, 5));
+      setEndTime(schedule.end_time.substring(0, 5));
+      setError(null);
+    }
+  }, [schedule, isOpen]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!schedule) return;
+
+    if (!startTime || !endTime) {
+      setError("Please enter both start and end times.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await onSave(schedule.id, startTime, endTime);
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "Failed to update time.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (!isOpen || !schedule) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-sm w-full">
+        <form onSubmit={handleSubmit}>
+          <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Clock className="w-5 h-5 text-primary" />
+                Edit Time
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {studentName} - {schedule.day_of_week}
+              </p>
+            </div>
+            <button type="button" onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              <X size={20} />
+            </button>
+          </div>
+          <div className="p-4 space-y-4">
+            {error && (
+              <div className="p-3 text-red-700 bg-red-100 rounded dark:bg-red-900/20 dark:text-red-400">
+                {error}
+              </div>
+            )}
+            <div>
+              <label htmlFor="editStartTime" className="block text-sm font-medium">
+                Start Time *
+              </label>
+              <input
+                type="time"
+                id="editStartTime"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+            <div>
+              <label htmlFor="editEndTime" className="block text-sm font-medium">
+                End Time *
+              </label>
+              <input
+                type="time"
+                id="editEndTime"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+                className="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end p-4 bg-gray-50 dark:bg-gray-900/50 border-t dark:border-gray-700 gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm bg-white dark:bg-gray-700 border rounded-md hover:bg-gray-100 dark:hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 text-sm text-white bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50"
+            >
+              {isLoading ? "Saving..." : "Update Time"}
             </button>
           </div>
         </form>
@@ -701,14 +826,14 @@ function WeeklyCalendar({
   teacher,
   onAddSchedule,
   onSessionClick,
-  onEditSchedule,
+  onEditTime,
   onDeleteSchedule,
 }: {
   teacher: Teacher;
   onAddSchedule: () => void;
   onSessionClick: (schedule: Schedule, date: string, student: Student) => void;
-  onEditSchedule: (schedule: Schedule, student: Student) => void;
-  onDeleteSchedule: (scheduleId: number, studentName: string) => void;
+  onEditTime: (schedule: Schedule, student: Student) => void;
+  onDeleteSchedule: (scheduleId: number, studentName: string, dayOfWeek: string, time: string) => void;
 }) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
@@ -867,17 +992,22 @@ function WeeklyCalendar({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onEditSchedule(schedule, student);
+                              onEditTime(schedule, student);
                             }}
                             className="p-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 rounded text-blue-600 dark:text-blue-400"
-                            title="Edit Schedule"
+                            title="Edit Time"
                           >
-                            <Pencil className="w-3 h-3" />
+                            <Clock className="w-3 h-3" />
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onDeleteSchedule(schedule.id, `${student.first_name} ${student.last_name}`);
+                              onDeleteSchedule(
+                                schedule.id,
+                                `${student.first_name} ${student.last_name}`,
+                                schedule.day_of_week,
+                                schedule.start_time.substring(0, 5)
+                              );
                             }}
                             className="p-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-800/50 rounded text-red-600 dark:text-red-400"
                             title="Delete Schedule"
@@ -983,6 +1113,11 @@ export default function NormalAdminDashboard() {
   // State to track existing session attendance
   const [existingSessionAttendance, setExistingSessionAttendance] =
     useState<SessionAttendance | null>(null);
+
+  // State for Time Edit Modal
+  const [isTimeEditModalOpen, setIsTimeEditModalOpen] = useState(false);
+  const [scheduleToEdit, setScheduleToEdit] = useState<Schedule | null>(null);
+  const [studentNameToEdit, setStudentNameToEdit] = useState<string>("");
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -1178,8 +1313,8 @@ export default function NormalAdminDashboard() {
     await fetchData();
   };
 
-  const handleDeleteSchedule = async (scheduleId: number, studentName: string) => {
-    if (!window.confirm(`Are you sure you want to delete the schedule for ${studentName}? This action cannot be undone.`)) {
+  const handleDeleteSchedule = async (scheduleId: number, studentName: string, dayOfWeek: string, time: string) => {
+    if (!window.confirm(`Are you sure you want to remove ${studentName}'s ${dayOfWeek} class at ${time}? This action cannot be undone.`)) {
       return;
     }
     try {
@@ -1194,13 +1329,20 @@ export default function NormalAdminDashboard() {
     }
   };
 
-  const handleEditSchedule = (schedule: Schedule, student: Student) => {
-    setSelectedSchedule(schedule);
-    setSelectedStudent(student);
-    // Set a date to today for the modal context
-    setSelectedSessionDate(new Date().toISOString().split("T")[0]);
-    setExistingSessionAttendance(null);
-    setIsSessionAttendanceModalOpen(true);
+  const handleEditTime = (schedule: Schedule, student: Student) => {
+    setScheduleToEdit(schedule);
+    setStudentNameToEdit(`${student.first_name} ${student.last_name}`);
+    setIsTimeEditModalOpen(true);
+  };
+
+  const handleUpdateScheduleTime = async (scheduleId: number, startTime: string, endTime: string) => {
+    await apiFetch(`/api/admin/schedules/${scheduleId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ start_time: startTime, end_time: endTime }),
+    });
+    alert("Time updated successfully!");
+    setIsTimeEditModalOpen(false);
+    await fetchData();
   };
 
   if (isLoading) return <div className="p-10">Loading teacher data...</div>;
@@ -1290,7 +1432,7 @@ export default function NormalAdminDashboard() {
                     teacher={teacher}
                     onAddSchedule={() => handleAddScheduleClick(teacher)}
                     onSessionClick={handleSessionClick}
-                    onEditSchedule={handleEditSchedule}
+                    onEditTime={handleEditTime}
                     onDeleteSchedule={handleDeleteSchedule}
                   />
                   {/* <div className="border-t dark:border-gray-700 p-4">
@@ -1521,6 +1663,15 @@ export default function NormalAdminDashboard() {
             await fetchAttendanceCount(openTeacherId, selectedMonth);
           }
         }}
+      />
+
+      {/* Render Time Edit Modal */}
+      <TimeEditModal
+        isOpen={isTimeEditModalOpen}
+        onClose={() => setIsTimeEditModalOpen(false)}
+        onSave={handleUpdateScheduleTime}
+        schedule={scheduleToEdit}
+        studentName={studentNameToEdit}
       />
     </div>
   );
