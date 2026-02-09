@@ -252,6 +252,14 @@ def update_schedule(db: Session, schedule_id: int, schedule_update: schemas.Sche
     db.commit(); db.refresh(db_schedule)
     return db_schedule
 
+def delete_schedule(db: Session, schedule_id: int):
+    """Deletes a schedule from the database by its ID."""
+    db_schedule = db.query(models.Schedule).filter(models.Schedule.id == schedule_id).first()
+    if db_schedule:
+        db.delete(db_schedule)
+        db.commit()
+    return db_schedule
+
 # --- Session Attendance CRUD Functions (using unified Attendance model) ---
 
 def create_session_attendance(db: Session, schedule_id: int, class_date: date, teacher_status: str, student_status: str, student_id: int, teacher_id: int):

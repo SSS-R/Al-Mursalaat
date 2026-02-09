@@ -969,6 +969,18 @@ def update_existing_schedule(schedule_id: int, schedule_update: schemas.Schedule
     if current_admin.role not in ["admin", "supreme-admin"]: raise HTTPException(403)
     return crud.update_schedule(db, schedule_id, schedule_update)
 
+@app.delete("/api/admin/schedules/{schedule_id}")
+def delete_schedule(schedule_id: int, db: Session=Depends(get_db), current_admin=Depends(get_current_admin)):
+    """Deletes a schedule by its ID. Available to admins and supreme-admins."""
+    if current_admin.role not in ["admin", "supreme-admin"]: 
+        raise HTTPException(status_code=403, detail="Forbidden: Not enough permissions.")
+    
+    db_schedule = crud.delete_schedule(db, schedule_id=schedule_id)
+    if not db_schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found.")
+    
+    return {"message": "Schedule deleted successfully."}
+
 @app.get("/api/teacher/my-attendance-stats", response_model=schemas.AttendanceStats)
 def get_my_stats(
     year: int, month: int, 
