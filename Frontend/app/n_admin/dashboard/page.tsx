@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
@@ -699,10 +701,14 @@ function WeeklyCalendar({
   teacher,
   onAddSchedule,
   onSessionClick,
+  onEditSchedule,
+  onDeleteSchedule,
 }: {
   teacher: Teacher;
   onAddSchedule: () => void;
   onSessionClick: (schedule: Schedule, date: string, student: Student) => void;
+  onEditSchedule: (schedule: Schedule, student: Student) => void;
+  onDeleteSchedule: (scheduleId: number, studentName: string) => void;
 }) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
@@ -852,33 +858,61 @@ function WeeklyCalendar({
                 return (
                   <td key={index} className="border-r p-2 space-y-2 min-w-[100px]">
                     {daySchedules.map(({ schedule, student }) => (
-                      <button
+                      <div
                         key={schedule.id}
-                        onClick={() =>
-                          onSessionClick(schedule, dateStr, student)
-                        }
-                        className="w-full text-left bg-primary/10 hover:bg-primary/20 p-2 rounded-md text-xs transition-colors"
+                        className="group relative flex items-start gap-1"
                       >
-                        <p className="font-bold">{`${schedule.start_time.substring(
-                          0,
-                          5
-                        )} - ${schedule.end_time.substring(0, 5)}`}</p>
-                        <p className="truncate">
-                          {student.first_name} {student.last_name}
-                        </p>
-                        {schedule.zoom_link && (
-                          <a
-                            href={schedule.zoom_link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-blue-600 hover:underline flex items-center mt-1"
+                        {/* Hover action buttons - appear on left side */}
+                        <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 shrink-0">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditSchedule(schedule, student);
+                            }}
+                            className="p-1 bg-blue-100 hover:bg-blue-200 dark:bg-blue-900/30 dark:hover:bg-blue-800/50 rounded text-blue-600 dark:text-blue-400"
+                            title="Edit Schedule"
                           >
-                            <Video className="w-3 h-3 mr-1" />
-                            Zoom
-                          </a>
-                        )}
-                      </button>
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteSchedule(schedule.id, `${student.first_name} ${student.last_name}`);
+                            }}
+                            className="p-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-800/50 rounded text-red-600 dark:text-red-400"
+                            title="Delete Schedule"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                        {/* Schedule card */}
+                        <button
+                          onClick={() =>
+                            onSessionClick(schedule, dateStr, student)
+                          }
+                          className="flex-1 text-left bg-primary/10 hover:bg-primary/20 p-2 rounded-md text-xs transition-colors"
+                        >
+                          <p className="font-bold">{`${schedule.start_time.substring(
+                            0,
+                            5
+                          )} - ${schedule.end_time.substring(0, 5)}`}</p>
+                          <p className="truncate">
+                            {student.first_name} {student.last_name}
+                          </p>
+                          {schedule.zoom_link && (
+                            <a
+                              href={schedule.zoom_link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-blue-600 hover:underline flex items-center mt-1"
+                            >
+                              <Video className="w-3 h-3 mr-1" />
+                              Zoom
+                            </a>
+                          )}
+                        </button>
+                      </div>
                     ))}
                     {daySchedules.length === 0 && (
                       <p className="text-xs text-gray-400 italic p-1">
@@ -1144,6 +1178,31 @@ export default function NormalAdminDashboard() {
     await fetchData();
   };
 
+  const handleDeleteSchedule = async (scheduleId: number, studentName: string) => {
+    if (!window.confirm(`Are you sure you want to delete the schedule for ${studentName}? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      await apiFetch(`/api/admin/schedules/${scheduleId}`, {
+        method: "DELETE",
+      });
+      alert("Schedule deleted successfully!");
+      // Re-fetch all data to show the updated list
+      await fetchData();
+    } catch (err: any) {
+      alert(`Error deleting schedule: ${err.message}`);
+    }
+  };
+
+  const handleEditSchedule = (schedule: Schedule, student: Student) => {
+    setSelectedSchedule(schedule);
+    setSelectedStudent(student);
+    // Set a date to today for the modal context
+    setSelectedSessionDate(new Date().toISOString().split("T")[0]);
+    setExistingSessionAttendance(null);
+    setIsSessionAttendanceModalOpen(true);
+  };
+
   if (isLoading) return <div className="p-10">Loading teacher data...</div>;
   if (error) return <div className="p-10 text-red-500">{error}</div>;
 
@@ -1231,6 +1290,8 @@ export default function NormalAdminDashboard() {
                     teacher={teacher}
                     onAddSchedule={() => handleAddScheduleClick(teacher)}
                     onSessionClick={handleSessionClick}
+                    onEditSchedule={handleEditSchedule}
+                    onDeleteSchedule={handleDeleteSchedule}
                   />
                   {/* <div className="border-t dark:border-gray-700 p-4">
                     <div className="flex items-center space-x-4 mb-4">
