@@ -1353,11 +1353,29 @@ export default function NormalAdminDashboard() {
 
   return (
     <div className="p-6 sm:p-10">
-      <div>
-        <h1 className="text-3xl font-bold">Teacher & Student Management</h1>
-        <p className="mt-2 text-gray-500">
-          View and manage assigned teachers and their students.
-        </p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">Teacher & Student Management</h1>
+          <p className="mt-2 text-gray-500">
+            View and manage assigned teachers and their students.
+          </p>
+        </div>
+        <button
+          onClick={async () => {
+            if (!window.confirm("This will split schedules with multiple days into separate per-day records. Run migration?")) return;
+            try {
+              const result = await apiFetch<{ message: string }>("/api/admin/migrate-schedules", { method: "POST" });
+              alert(result.message);
+              await fetchData(); // Refresh data after migration
+            } catch (err: any) {
+              alert(`Migration failed: ${err.message}`);
+            }
+          }}
+          className="px-4 py-2 text-sm bg-orange-500 hover:bg-orange-600 text-white rounded-md flex items-center gap-2"
+          title="Fix existing schedules to allow individual day editing/deletion"
+        >
+          🔧 Fix Schedules
+        </button>
       </div>
 
       <div className="mt-6 flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
