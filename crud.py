@@ -331,7 +331,7 @@ def get_attendance_count_by_month(db: Session, teacher_id: int, year: int, month
         c_name = "Unknown"
         if r.student:
             if r.student.course:
-                c_name = r.student.course[0].name
+                c_name = r.student.course.name
             elif r.student.preferred_course:
                 c_name = r.student.preferred_course
             
